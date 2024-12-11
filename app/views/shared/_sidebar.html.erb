@@ -1,6 +1,9 @@
 <div class="flex flex-col gap-4">
   <div data-controller="dialog">
-    <button class="btn btn--primary w-full" data-action="dialog#showModal">
+    <button class="btn btn--primary w-full" 
+            data-action="dialog#showModal"
+            <%= 'disabled' unless authenticated? %>
+            title="<%= authenticated? ? 'Add Category' : 'Please login to add categories' %>">
       Add Category
     </button>
 
