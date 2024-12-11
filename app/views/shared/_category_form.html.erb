@@ -5,8 +5,13 @@
 
   <div class="flex flex-col gap-4">
     <h2 class="text-xl font-bold">Add Category</h2>
-    
-    <%= form_with(model: category, class: "flex flex-col gap-4") do |f| %>
+
+    <%= form_with(model: category, 
+        class: "flex flex-col gap-4", 
+        data: { 
+          turbo: "true",
+          action: "turbo:submit-end->dialog#close"
+        }) do |f| %>
       <% if category.errors.any? %>
         <div class="alert alert--negative">
           <ul class="list-disc list-inside">
@@ -23,7 +28,7 @@
       </div>
 
       <div class="flex justify-end gap-2">
-        <button type="button" class="btn" data-action="dialog#close">Cancel</button>
+        <button type="button"  class="btn" data-action="dialog#close">Cancel</button>
         <%= f.submit "Create", class: "btn btn--primary" %>
       </div>
     <% end %>

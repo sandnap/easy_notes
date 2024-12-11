@@ -11,7 +11,9 @@
     </div>
   </div>
 
-  <nav class="accordion" id="categories">
-    <%= render partial: "categories/category", collection: @categories %>
+  <nav class="accordion" id="categories" data-controller="menu">
+    <div class="categories_list menu__group">
+      <%= render partial: "categories/category", collection: @categories %>
+    </div>
   </nav>
 </div>

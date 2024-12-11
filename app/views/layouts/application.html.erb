@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="turbo-refresh-method" content="morph">
+    <meta name="turbo-preserve-scroll-position" content="true">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
@@ -12,15 +14,17 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="sidebar-layout">
+  <body class="sidebar-layout" data-controller="debug">
     <%= render "shared/flash" %>
-    
-    <header id="header">
-      <%= render "shared/mobile_menu" %>
+
+    <header id="header" class="flex items-center justify-between">
+      <div class="hide@md">
+        <%= render "shared/mobile_menu" %>
+      </div>
       <h1 class="font-bold text-2xl">Easy Notes</h1>
-      
+
       <div class="flex-grow"></div>
-      
+
       <% if authenticated? %>
         <%= button_to "Logout", session_path, method: :delete, class: "btn" %>
       <% end %>
