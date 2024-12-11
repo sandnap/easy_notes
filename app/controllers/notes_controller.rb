@@ -1,7 +1,7 @@
 class NotesController < ApplicationController
   before_action :set_category
-  before_action :set_categories, only: [:new, :create, :edit, :update]
-  before_action :set_note, only: [:edit, :update]
+  before_action :set_categories, only: [ :new, :create, :edit, :update ]
+  before_action :set_note, only: [ :edit, :update ]
 
   def new
     @note = @category.notes.build
@@ -12,7 +12,7 @@ class NotesController < ApplicationController
 
     if @note.save
       @note = @category.notes.find(@note.id) # Reload to ensure associations
-      render :edit, status: :ok
+      redirect_to edit_category_note_path(@category, @note), notice: "Note was successfully created."
     else
       render :new, status: :unprocessable_entity
     end
@@ -23,7 +23,7 @@ class NotesController < ApplicationController
 
   def update
     if @note.update(note_params)
-      render :edit, status: :ok
+      redirect_to edit_category_note_path(@category, @note), notice: "Note was successfully updated."
     else
       render :edit, status: :unprocessable_entity
     end

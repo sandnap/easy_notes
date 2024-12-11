@@ -1,12 +1,10 @@
 <%= turbo_frame_tag "flash" do %>
   <% if flash.any? %>
-    <div class="fixed top-4 right-4 z-50">
+    <div class="">
       <% flash.each do |type, message| %>
-        <div class="alert <%= type == 'notice' ? 'alert--positive' : 'alert--negative' %> mb-2"
-             data-controller="element-removal"
-             data-action="animationend->element-removal#remove"
-             data-animation="fade-out">
-          <%= message %>
+        <div popover class="flash <%= type == 'notice' ? 'alert--positive' : 'alert--negative' %>" style="--flash-position: 1rem;" data-controller="element-removal" data-action="animationend->element-removal#remove" role="alert">
+          <%= image_tag type == 'notice' ? 'circle-check.svg' : 'circle-x.svg' , class: "#{ type == 'notice' ? 'colorize-positive' : 'colorize-negative'  }", size: 20, aria: { hidden: true } %>
+          <%= tag.span message %>
         </div>
       <% end %>
     </div>
