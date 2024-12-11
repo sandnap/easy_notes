@@ -1,0 +1,31 @@
+:where(.table) {
+  font-size: var(--text-sm);
+  inline-size: var(--size-full);
+
+  thead {
+    color: var(--color-text-subtle);
+  }
+
+  tbody tr {
+    border-block-start-width: var(--border);
+  }
+
+  tr:hover {
+    background-color: rgb(from var(--color-border-light) r g b / .5);
+  }
+
+  th {
+    font-weight: var(--font-medium);
+    text-align: start;
+  }
+
+  th, td {
+    padding: var(--size-4);
+  }
+
+  tfoot {
+    background-color: var(--color-border-light);
+    border-block-start-width: var(--border);
+    font-weight: var(--font-medium);
+  }
+}

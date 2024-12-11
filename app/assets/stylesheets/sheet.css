@@ -1,0 +1,72 @@
+.sheet {
+  background-color: var(--color-bg);
+  border-inline-start-width: var(--border);
+  box-shadow: var(--shadow-lg);
+  block-size: var(--size-full);
+  color: var(--color-text);
+  inline-size: var(--size-3-4);
+  margin-inline: var(--sheet-margin);
+  max-block-size: unset;
+
+  &::backdrop {
+    background-color: rgba(0, 0, 0, .8);
+  }
+
+  /* Setup animation */
+  transform: var(--sheet-transform);
+  transition-behavior: allow-discrete;
+  transition-duration: var(--time-500);
+  transition-property: display, overlay, transform;
+
+  &::backdrop {
+    opacity: 0;
+    transition-behavior: allow-discrete;
+    transition-duration: var(--time-150);
+    transition-property: display, overlay, opacity;
+  }
+
+  /* In animation */
+  &[open] {
+    transform: translateX(0);
+  }
+
+  &[open]::backdrop {
+    opacity: 1;
+  }
+
+  /* Out animation */
+  @starting-style {
+    &[open] {
+      transform: var(--sheet-transform);
+    }
+
+    &[open]::backdrop {
+      opacity: 0;
+    }
+  }
+
+  @media (width >= 40rem) {
+    max-inline-size: var(--max-i-sm);
+  }
+}
+
+.sheet--left {
+  --sheet-margin: 0 auto;
+  --sheet-transform: translateX(-100%);
+}
+
+.sheet--right {
+  --sheet-margin: auto 0;
+  --sheet-transform: translateX(100%);
+}
+
+.sheet__content {
+  block-size: var(--size-full);
+  padding: var(--size-6);
+}
+
+.sheet__close {
+  inset-block-start: var(--size-4);
+  inset-inline-end: var(--size-4);
+  position: absolute;
+}

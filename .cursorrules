@@ -1,0 +1,59 @@
+# Cursor.sh Configuration
+
+# Ignore specific files or directories
+ignore:
+  - build
+  - dist
+  - .git
+
+# File type associations
+associations:
+  .erb: ruby
+
+# Token limit for AI completions
+max_tokens: 2048
+
+# Enable/disable features
+features:
+  autocomplete: true
+  codeActions: true
+  hover: true
+
+# Custom AI Prompts
+prompts:
+  application_overview: >
+    Prefer modern rails including hotwire (turbo drive, turbo frames, turbo streams, etc), import maps, and stimulus with the goal of creating responsive and reactive applications having a single page application feel.
+
+  ruby: >
+    You are an expert Ruby on Rails developer working with Rails 8. Ensure consistency with the existing project code, which follows the RuboCop Omakase style guide. 
+  
+  javascript: >
+    You are a JavaScript expert working in a Rails 8 project with import maps. Focus on modern ES6+ syntax, best practices, and compatibility with import maps.
+  
+  UI: >
+    You are working on Rails 8 ERB templates using CSS-Zero for styling. Use utility classes for layout, spacing, typography, animations, transitions, and more. 
+    CSS-Zero provides additional components (located in `app/assets/stylesheets`) but the full stylesheets are unavailable in the environment. Use the documentation links provided for reference and ensure your designs conform to CSS-Zero conventions.
+
+# Documentation Links
+css_zero:
+  Utilities: https://raw.githubusercontent.com/lazaronixon/css-zero/refs/heads/master/app/assets/stylesheets/zutilities.css
+  Typography: https://raw.githubusercontent.com/lazaronixon/css-zero/refs/heads/master/app/assets/stylesheets/typography.css
+  Components: https://raw.githubusercontent.com/lazaronixon/css-zero/refs/heads/master/app/assets/stylesheets/zcomponents.css
+  Transition: https://raw.githubusercontent.com/lazaronixon/css-zero/refs/heads/master/app/assets/stylesheets/transition.css
+  Sizes: https://raw.githubusercontent.com/lazaronixon/css-zero/refs/heads/master/app/assets/stylesheets/sizes.css
+  Filters: https://raw.githubusercontent.com/lazaronixon/css-zero/refs/heads/master/app/assets/stylesheets/filters.css
+  Effects: https://raw.githubusercontent.com/lazaronixon/css-zero/refs/heads/master/app/assets/stylesheets/effects.css
+  Colors: https://raw.githubusercontent.com/lazaronixon/css-zero/refs/heads/master/app/assets/stylesheets/colors.css
+  Borders: https://raw.githubusercontent.com/lazaronixon/css-zero/refs/heads/master/app/assets/stylesheets/borders.css
+
+icons:
+  Lucide: https://lucide.dev/icons/
+
+# Framework Versions
+frameworks:
+  rails: 8
+  CSS-Zero: latest
+  Lucide: latest
+
+# Additional Context
+# Add custom rules or configurations as needed.
