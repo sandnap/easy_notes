@@ -1,0 +1,15 @@
+<div data-controller="dialog">
+  <button class="btn btn--icon md:hidden" data-action="dialog#showModal">
+    <%= image_tag "menu.svg", alt: "Menu" %>
+  </button>
+
+  <dialog class="sheet sheet--left" data-dialog-target="menu" data-action="click->dialog#closeOnClickOutside">
+    <div class="sheet__content">
+      <button class="sheet__close btn btn--icon" data-action="dialog#close">
+        <%= image_tag "x.svg", alt: "Close" %>
+      </button>
+      
+      <%= render "shared/sidebar" %>
+    </div>
+  </dialog>
+</div>

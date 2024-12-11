@@ -1,0 +1,10 @@
+<details>
+  <summary><%= category.name %></summary>
+  <div class="menu">
+    <div class="menu__group">
+      <% category.notes.each do |note| %>
+        <%= link_to note.title, category_note_path(category, note), class: "menu__item" %>
+      <% end %>
+    </div>
+  </div>
+</details>

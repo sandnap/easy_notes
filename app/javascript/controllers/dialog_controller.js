@@ -14,4 +14,10 @@ export default class extends Controller {
   closeOnClickOutside({ target }) {
     target.nodeName === "DIALOG" && this.close()
   }
+
+  disconnect() {
+    if (this.menuTarget && this.menuTarget.open) {
+      this.close()
+    }
+  }
 }

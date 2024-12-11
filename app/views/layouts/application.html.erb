@@ -8,31 +8,30 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
-    <%= yield :head %>
-
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
-
-    <link rel="icon" href="/icon.png" type="image/png">
-    <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.png">
-
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :all, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="header-layout">
+  <body class="sidebar-layout">
+    <%= render "shared/flash" %>
+    
     <header id="header">
-      <div class="container">
-        <h1 class="font-bold text-2xl">Easy Notes</h1>
-      </div>
+      <%= render "shared/mobile_menu" %>
+      <h1 class="font-bold text-2xl">Easy Notes</h1>
+      
+      <div class="flex-grow"></div>
+      
+      <% if authenticated? %>
+        <%= button_to "Logout", session_path, method: :delete, class: "btn" %>
+      <% end %>
     </header>
 
+    <aside id="sidebar">
+      <%= render "shared/sidebar" %>
+    </aside>
+
     <main id="main">
-      <div class="container">
-        <%= yield %>
-      </div>
+      <%= yield %>
     </main>
   </body>
 </html>

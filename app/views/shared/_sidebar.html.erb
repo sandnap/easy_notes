@@ -1,0 +1,17 @@
+<div class="flex flex-col gap-4">
+  <div data-controller="dialog">
+    <button class="btn btn--primary w-full" data-action="dialog#showModal">
+      Add Category
+    </button>
+
+    <div id="dialog">
+      <dialog class="dialog" data-dialog-target="menu" data-action="click->dialog#closeOnClickOutside">
+        <%= render "shared/category_form", category: Category.new %>
+      </dialog>
+    </div>
+  </div>
+
+  <nav class="accordion" id="categories">
+    <%= render partial: "categories/category", collection: @categories %>
+  </nav>
+</div>

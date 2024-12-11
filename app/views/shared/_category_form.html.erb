@@ -1,0 +1,31 @@
+<div class="dialog__content">
+  <button class="dialog__close btn btn--icon" data-action="dialog#close">
+    <%= image_tag "x.svg", alt: "Close" %>
+  </button>
+
+  <div class="flex flex-col gap-4">
+    <h2 class="text-xl font-bold">Add Category</h2>
+    
+    <%= form_with(model: category, class: "flex flex-col gap-4") do |f| %>
+      <% if category.errors.any? %>
+        <div class="alert alert--negative">
+          <ul class="list-disc list-inside">
+            <% category.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div>
+        <%= f.label :name, class: "label" %>
+        <%= f.text_field :name, class: "input", required: true, autofocus: true %>
+      </div>
+
+      <div class="flex justify-end gap-2">
+        <button type="button" class="btn" data-action="dialog#close">Cancel</button>
+        <%= f.submit "Create", class: "btn btn--primary" %>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,14 @@
+<%= turbo_frame_tag "flash" do %>
+  <% if flash.any? %>
+    <div class="fixed top-4 right-4 z-50">
+      <% flash.each do |type, message| %>
+        <div class="alert <%= type == 'notice' ? 'alert--positive' : 'alert--negative' %> mb-2"
+             data-controller="element-removal"
+             data-action="animationend->element-removal#remove"
+             data-animation="fade-out">
+          <%= message %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>
