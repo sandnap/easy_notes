@@ -1,0 +1,32 @@
+<div class="card">
+  <div class="flex items-center justify-between gap-4 mb-6">
+    <h1 class="text-2xl font-bold">New Note in <%= @category.name %></h1>
+  </div>
+
+  <%= form_with(model: [@category, @note], class: "flex flex-col gap-4") do |f| %>
+    <% if @note.errors.any? %>
+      <div class="alert alert--negative">
+        <ul class="list-disc list-inside">
+          <% @note.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div>
+      <%= f.label :title, class: "label" %>
+      <%= f.text_field :title, class: "input", required: true, autofocus: true %>
+    </div>
+
+    <div>
+      <%= f.label :content, class: "label" %>
+      <%= f.text_area :content, rows: "auto", class: "input" %>
+    </div>
+
+    <div class="flex justify-end gap-2">
+      <%= link_to "Cancel", root_path, data: { turbo: "false" }, class: "btn" %>
+      <%= f.submit "Save", class: "btn btn--primary" %>
+    </div>
+  <% end %>
+</div>
