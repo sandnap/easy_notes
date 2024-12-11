@@ -4,7 +4,7 @@
       <%= link_to new_category_note_path(category), 
           class: "btn btn--icon p-1 mie-2 inline-flex items-center justify-center rounded-full btn--secondary opacity-100", 
           title: "Add note to #{category.name}",
-          data: { turbo_frame: "main" } do %>
+          data: { turbo_frame: "_top" } do %>
         <%= image_tag "plus.svg", alt: "Add note", size: "16" %>
       <% end %>
       <span class="grow"><%= category.name %></span>
@@ -14,9 +14,9 @@
     <div class="menu__group">
       <% category.notes.each do |note| %>
         <%= link_to note.title, 
-            category_note_path(category, note), 
-            class: "menu__item #{'bg-secondary' if @note == note}",
-            data: { turbo_frame: "main" } %>
+            edit_category_note_path(category, note), 
+            class: "menu__item #{'bg-secondary' if @note == note}", 
+            data: { turbo_frame: "_top" } %>
       <% end %>
     </div>
   </div>
