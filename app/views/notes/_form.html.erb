@@ -25,7 +25,7 @@
     </div>
 
     <div class="flex justify-end gap">
-      <%= link_to "Cancel", root_path, data: { turbo_frame: "_top", turbo_prefetch: false }, class: "btn" %>
+      <%= link_to @note.new_record? ? "Cancel" : "Close", root_path, data: { turbo_frame: "_top", turbo_prefetch: false }, class: "btn" %>
       <%= f.submit "Save", data: { turbo_frame: "_top" }, class: "btn btn--primary" %>
     </div>
   <% end %>
