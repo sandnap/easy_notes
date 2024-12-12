@@ -1,12 +1,13 @@
 <div class="flex flex-col gap-4">
   <div data-controller="dialog">
-    <button class="btn btn--primary w-full" 
+    <div class="flex">
+      <button class="btn btn--primary grow mbe-8" 
             data-action="dialog#showModal"
             <%= 'disabled' unless authenticated? %>
             title="<%= authenticated? ? 'Add Category' : 'Please login to add categories' %>">
-      Add Category
-    </button>
-
+        Add Category
+      </button>
+    </div>
     <div id="dialog">
       <dialog class="dialog" data-dialog-target="menu" data-action="click->dialog#closeOnClickOutside">
         <%= render "shared/category_form", category: Category.new %>

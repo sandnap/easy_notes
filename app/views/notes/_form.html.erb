@@ -1,5 +1,5 @@
-<div class="card">
-  <div class="flex items-center justify-between gap-4 mb-6">
+<div class="card p-4">
+  <div class="flex items-center justify-between gap-4 mbe-4">
     <h1 class="text-2xl font-bold"><%= @note.new_record? ? "New Note in #{@category.name}" : @note.title %></h1>
   </div>
 
@@ -17,16 +17,14 @@
     <% end %>
 
     <div>
-      <%= f.label :title, class: "label" %>
       <%= f.text_field :title, class: "input", required: true, autofocus: true %>
     </div>
 
     <div>
-      <%= f.label :content, class: "label" %>
-      <%= f.text_area :content, rows: "auto", class: "input" %>
+      <%= f.rich_text_area :content, placeholder: "Write away..." %>
     </div>
 
-    <div class="flex justify-end gap-2">
+    <div class="flex justify-end gap">
       <%= link_to "Cancel", root_path, data: { turbo_frame: "_top", turbo_prefetch: false }, class: "btn" %>
       <%= f.submit "Save", data: { turbo_frame: "_top" }, class: "btn btn--primary" %>
     </div>

@@ -21,7 +21,10 @@
       <div class="hide@md">
         <%= render "shared/mobile_menu" %>
       </div>
-      <h1 class="font-bold text-2xl">Easy Notes</h1>
+      <div class="flex items-center gap-2">
+        <%= image_tag "note.svg", alt: "Easy Notes", size: 20, class: "mie-2", style: "filter: var(--color-filter-text);" %>
+        <%= link_to "Easy Notes", root_path, class: "font-bold text-2xl" %>
+      </div>
 
       <div class="flex-grow"></div>
 

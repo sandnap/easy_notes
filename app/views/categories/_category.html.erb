@@ -1,5 +1,5 @@
 <details id="<%= dom_id(category) %>" class="menu__item" <%= 'open' if category.notes.include?(@note) %>>
-  <summary class="flex items-center gap-2">
+  <summary class="flex items-center">
     <% if authenticated? %>
       <%= link_to new_category_note_path(category), 
           class: "btn btn--icon p-1 mie-2 inline-flex items-center justify-center rounded-full btn--secondary opacity-100", 
@@ -11,11 +11,11 @@
     <% end %>
   </summary>
   <div class="menu">
-    <div class="menu__group">
+    <div class="menu__group mis-6">
       <% category.notes.each do |note| %>
         <%= link_to note.title, 
             edit_category_note_path(category, note), 
-            class: "menu__item #{'bg-secondary' if @note == note}", 
+            class: "menu__item border-bs #{'bg-secondary' if @note == note}", 
             data: { turbo_frame: "_top" } %>
       <% end %>
     </div>
