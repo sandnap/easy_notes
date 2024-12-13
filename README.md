@@ -1,4 +1,4 @@
-# README
+# Easy Notes
 
 Easy Notes is a simple note taking app built with Ruby on Rails and features rich text notes with support for images, links, and more. Supports note categorization.
 
@@ -11,6 +11,8 @@ Technology:
 - Hotwire (turbo and stimulus)
 
 - SQLite database
+
+- Rails Authentication
 
 - No Build using Import Maps and CSS Zero
 
@@ -25,3 +27,5 @@ Build and run:
 4. Run `bin/dev`
 
 5. Open the app in your browser at `http://localhost:3000`
+
+6. Login with `test@test.com` and password `password`
