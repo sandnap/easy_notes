@@ -1,24 +1,27 @@
 # README
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+Easy Notes is a simple note taking app built with Ruby on Rails and features rich text notes with support for images, links, and more. Supports note categorization.
 
-Things you may want to cover:
+Technology:
 
-* Ruby version
+- Ruby version 3.3.4
 
-* System dependencies
+- Rails version 8.0.0
 
-* Configuration
+- Hotwire (turbo and stimulus)
 
-* Database creation
+- SQLite database
 
-* Database initialization
+- No Build using Import Maps and CSS Zero
 
-* How to run the test suite
+Build and run:
 
-* Services (job queues, cache servers, search engines, etc.)
+1. Clone the repository
 
-* Deployment instructions
+2. Run `rails db:migrate`
 
-* ...
+3. Run `rails db:seed`
+
+4. Run `bin/dev`
+
+5. Open the app in your browser at `http://localhost:3000`
