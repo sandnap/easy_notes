@@ -16,7 +16,7 @@
         <%= link_to note.title, 
             edit_category_note_path(category, note), 
             class: "menu__item border-bs pi-6 pb-2",
-            style: "#{'background-color: var(--slate-800);' if @note == note}",
+            style: "#{'background-color: var(--color-text-reversed);' if @note == note}",
             data: { turbo_frame: "_top" } %>
       <% end %>
     </div>
