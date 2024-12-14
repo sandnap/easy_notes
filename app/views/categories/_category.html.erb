@@ -2,20 +2,21 @@
   <summary class="flex items-center">
     <% if authenticated? %>
       <%= link_to new_category_note_path(category), 
-          class: "btn btn--icon p-1 mie-2 inline-flex items-center justify-center rounded-full btn--secondary opacity-100", 
+          class: "btn btn--icon p-1 mie-4 inline-flex items-center justify-center rounded-full btn--secondary opacity-100", 
           title: "Add note to #{category.name}",
           data: { turbo_frame: "_top" } do %>
-        <%= image_tag "plus.svg", alt: "Add note", size: "16" %>
+        <%= image_tag "plus.svg", alt: "Add note", size: "20" %>
       <% end %>
       <span class="grow"><%= category.name %></span>
     <% end %>
   </summary>
   <div class="menu">
-    <div class="menu__group mis-6">
-      <% category.notes.each do |note| %>
+    <div class="menu__group">
+      <% category.notes.each_with_index do |note, index| %>
         <%= link_to note.title, 
             edit_category_note_path(category, note), 
-            class: "menu__item border-bs #{'bg-secondary' if @note == note}", 
+            class: "menu__item border-bs pi-6 pb-2",
+            style: "#{'background-color: var(--slate-800);' if @note == note}",
             data: { turbo_frame: "_top" } %>
       <% end %>
     </div>
