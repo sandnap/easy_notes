@@ -8,6 +8,6 @@ class CreateNotes < ActiveRecord::Migration[8.0]
       t.timestamps
     end
 
-    add_index :notes, [:category_id, :title]
+    add_index :notes, [ :category_id, :title ]
   end
 end
