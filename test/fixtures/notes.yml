@@ -1,0 +1,9 @@
+one:
+  title: First Note
+  content: Content for first note
+  category: one
+
+two:
+  title: Second Note
+  content: Content for second note
+  category: two 

@@ -1,0 +1,9 @@
+one:
+  name: First Category
+  user: one
+  notes_count: 1
+
+two:
+  name: Second Category
+  user: two
+  notes_count: 1 

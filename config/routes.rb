@@ -4,7 +4,7 @@ Rails.application.routes.draw do
   resource :session
   resources :passwords, param: :token
 
-  resources :categories do
+  resources :categories, only: [ :create ] do
     resources :notes
   end
 
