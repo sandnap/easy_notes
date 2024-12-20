@@ -1,4 +1,4 @@
-<details id="<%= dom_id(category) %>" class="menu__item" <%= 'open' if category.notes.include?(@note) %>>
+<details id="<%= dom_id(category) %>" class="menu__item <%= dom_id(category) %>" <%= 'open' if category.notes.include?(@note) %>>
   <summary class="flex items-center">
     <% if authenticated? %>
       <%= link_to new_category_note_path(category), 

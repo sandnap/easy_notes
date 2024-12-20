@@ -1,7 +1,7 @@
-<div class="flex flex-col gap-4">
+<div class="flex flex-col">
   <div data-controller="dialog">
     <div class="flex">
-      <button class="btn btn--primary grow mbe-8" 
+      <button class="btn btn--primary grow mbe-4" 
             data-action="dialog#showModal"
             <%= 'disabled' unless authenticated? %>
             title="<%= authenticated? ? 'Add Category' : 'Please login to add categories' %>">
@@ -14,6 +14,11 @@
       </dialog>
     </div>
   </div>
+
+  <%= link_to categories_path, class: "btn btn--secondary mbe-8 text-center #{authenticated? ? '' : 'disabled'}", 
+      title: authenticated? ? 'Edit Categories' : 'Please login to edit categories' do %>
+    Edit Categories
+  <% end %>
 
   <nav class="accordion" id="categories" data-controller="menu">
     <div class="categories_list menu__group">

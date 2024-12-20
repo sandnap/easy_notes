@@ -1,0 +1,26 @@
+<div class="container mx-auto p-4">
+  <div class="flex flex-col gap">
+    <div class="flex items-center justify-between">
+      <h1 class="text-2xl font-bold">Categories</h1>
+      <%= link_to "Back to Notes", root_path, data: { turbo_frame: "_top" }, class: "btn" %>
+    </div>
+
+    <div class="card">
+      <div class="card__content">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Notes</th>
+              <th class="text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="categories_edit_list">
+            <%= render partial: "categories/category_row", collection: @categories, as: :category %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>

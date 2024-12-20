@@ -8,7 +8,7 @@ Rails.application.routes.draw do
   resource :session
   resources :passwords, param: :token
 
-  resources :categories, only: [ :create ] do
+  resources :categories, only: [ :index, :create, :update, :destroy ] do
     resources :notes
   end
 

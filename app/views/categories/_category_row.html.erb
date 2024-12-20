@@ -1,0 +1,24 @@
+<tr id="edit_<%= dom_id(category) %>">
+  <td><%= category.name %></td>
+  <td><%= category.notes_count %></td>
+  <td class="text-right" data-controller="dialog">
+    <div class="flex justify-end gap-2">
+      <button class="btn btn--icon" data-action="dialog#showModal" title="Edit Category">
+        <%= image_tag "edit.svg", alt: "Edit" %>
+      </button>
+
+      <%= button_to category_path(category), 
+          method: :delete,
+          class: "btn btn--icon", 
+          form: { data: { turbo_confirm: "Are you sure? This will delete the category and all #{category.notes_count} notes within it." } },
+          title: "Delete Category" do %>
+        <%= image_tag "trash.svg", alt: "Delete" %>
+      <% end %>
+    </div>
+    <div class="dialog">
+      <dialog class="dialog" data-dialog-target="menu" data-action="click->dialog#closeOnClickOutside">
+        <%= render "shared/category_form", category: category %>
+      </dialog>
+    </div>
+  </td>
+</tr>

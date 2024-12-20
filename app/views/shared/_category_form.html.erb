@@ -4,7 +4,7 @@
   </button>
 
   <div class="flex flex-col gap-4">
-    <h2 class="text-xl font-bold">Add Category</h2>
+    <h2 class="text-xl font-bold"><%= category.new_record? ? "Add Category" : "Edit Category" %></h2>
 
     <%= form_with(model: category, 
         class: "flex flex-col gap-4", 
@@ -28,8 +28,8 @@
       </div>
 
       <div class="flex justify-end gap mbs-4">
-        <button type="button"  class="btn" data-action="dialog#close">Cancel</button>
-        <%= f.submit "Create", class: "btn btn--primary" %>
+        <button type="button" class="btn" data-action="dialog#close">Cancel</button>
+        <%= f.submit "Save", class: "btn btn--primary" %>
       </div>
     <% end %>
   </div>
