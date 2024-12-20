@@ -1,6 +1,10 @@
 Rails.application.routes.draw do
   root "home#index"
 
+  get "export_import" => "export_import#index"
+  get "export_import/export"
+  post "export_import/import"
+
   resource :session
   resources :passwords, param: :token
 

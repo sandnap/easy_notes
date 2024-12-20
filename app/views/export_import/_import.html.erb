@@ -1,0 +1,15 @@
+<div>
+  <h1 class="font-bold text-2xl mb-4">Import Notes</h1>
+  <p class="mb-4">Select a YAML file previously exported from Easy Notes to import your categories and notes.</p>
+
+  <%= form_with(url: export_import_import_path, method: :post, class: "flex flex-col gap", local: true, data: { turbo: false }) do |f| %>
+    <div>
+      <%= f.label :file, "Import File", class: "label" %>
+      <%= f.file_field :file, class: "input mbs-2", accept: "application/x-yaml,text/yaml", required: true %>
+    </div>
+
+    <div class="flex justify-end">
+      <%= f.submit "Import", class: "btn btn--primary" %>
+    </div>
+  <% end %>
+</div>
