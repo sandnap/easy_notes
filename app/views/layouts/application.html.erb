@@ -34,8 +34,10 @@
       <div class="flex-grow"></div>
 
       <% if authenticated? %>
-        <div class="flex items-center gap">
-          <%= link_to "Import/Export Notes", export_import_path, class: "btn" %>
+        <div class="flex items-center gap-half">
+          <%= link_to export_import_path, class: "btn" do %>
+            <%= image_tag "download.svg", alt: "Import/Export", size: 20, class: "mie-2", style: "filter: var(--color-filter-text);" %>
+          <% end %>
           <%= button_to "Logout", session_path, method: :delete, class: "btn" %>
         </div>
       <% end %>
