@@ -15,9 +15,9 @@
       <% category.notes.each_with_index do |note, index| %>
         <%= link_to note.title, 
             edit_category_note_path(category, note), 
-            class: "menu__item border-bs pi-6 pb-2",
-            style: "#{'background-color: var(--color-text-reversed);' if @note == note}",
-            data: { turbo_frame: "_top" } %>
+            class: "menu__item border-bs pi-6 pb-2 #{dom_id(note)}",
+        style: "#{'background-color: var(--color-text-reversed);' if @note == note}",
+        data: { turbo_frame: "_top" } %>
       <% end %>
     </div>
   </div>

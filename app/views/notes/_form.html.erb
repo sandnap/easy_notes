@@ -25,6 +25,12 @@
     </div>
 
     <div class="flex justify-end gap">
+      <% unless @note.new_record? %>
+        <%= link_to "Delete", category_note_path(@category, @note, format: :html), 
+            class: "btn btn--negative", 
+            data: { turbo_method: :delete, turbo_frame: "_top", turbo_confirm: "Are you sure you want to delete this note?" }
+        %>
+      <% end %>
       <%= link_to @note.new_record? ? "Cancel" : "Close", root_path, data: { turbo_frame: "_top", turbo_prefetch: false }, class: "btn" %>
       <%= f.submit "Save", data: { turbo_frame: "_top" }, class: "btn btn--primary" %>
     </div>

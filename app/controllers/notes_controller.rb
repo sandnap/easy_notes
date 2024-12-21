@@ -29,6 +29,15 @@ class NotesController < ApplicationController
     end
   end
 
+  def destroy
+    @note = @category.notes.find(params[:id])
+    @note.destroy
+
+    respond_to do |format|
+      format.html { redirect_to root_path, notice: "Note was successfully deleted." }
+    end
+  end
+
   private
     def set_category
       @category = Current.user.categories.find(params[:category_id])
