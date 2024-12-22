@@ -15,7 +15,6 @@ class CategoriesController < ApplicationController
             turbo_stream.prepend_all(".categories_list", partial: "categories/category",  locals: { category: @category }),
             # The edit form
             turbo_stream.prepend("categories_edit_list", partial: "categories/category_row",  locals: { category: @category }),
-            turbo_stream.replace_all(".dialog", ""),
             turbo_stream.update("flash", partial: "shared/flash", locals: { notice: "Category was successfully created." })
           ]
         end
@@ -40,7 +39,6 @@ class CategoriesController < ApplicationController
             turbo_stream.replace_all(".category_#{@category.id}", partial: "categories/category",  locals: { category: @category }),
             # The edit form
             turbo_stream.replace("edit_category_#{@category.id}", partial: "categories/category_row",  locals: { category: @category }),
-            turbo_stream.replace_all(".dialog", ""),
             turbo_stream.update("flash", partial: "shared/flash", locals: { notice: "Category was successfully updated." })
           ]
         end
