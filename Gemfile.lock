@@ -98,7 +98,7 @@ GEM
     concurrent-ruby (1.3.4)
     connection_pool (2.4.1)
     crass (1.0.6)
-    css-zero (0.0.77)
+    css-zero (0.0.80)
     date (3.4.1)
     debug (1.10.0)
       irb (~> 1.10)
@@ -339,7 +339,7 @@ DEPENDENCIES
   bootsnap
   brakeman
   capybara
-  css-zero (~> 0.0.77)
+  css-zero (~> 0.0.80)
   debug
   image_processing (~> 1.2)
   importmap-rails
