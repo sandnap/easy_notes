@@ -23,9 +23,25 @@ class NotesController < ApplicationController
 
   def update
     if @note.update(note_params)
-      redirect_to edit_category_note_path(@category, @note), notice: "Note was successfully updated."
+      # Reorder other notes if position changed
+      if note_params[:position].present?
+        @category.notes.where.not(id: @note.id)
+          .where("position >= ?", @note.position)
+          .update_all("position = position + 1")
+      end
+      
+      respond_to do |format|
+        format.html { 
+          redirect_to edit_category_note_path(@category, @note), 
+          notice: "Note was successfully updated." 
+        }
+        format.json { head :ok }
+      end
     else
-      render :edit, status: :unprocessable_entity
+      respond_to do |format|
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: @note.errors, status: :unprocessable_entity }
+      end
     end
   end
 
