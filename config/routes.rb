@@ -9,7 +9,11 @@ Rails.application.routes.draw do
   resources :passwords, param: :token
 
   resources :categories, only: [ :index, :create, :update, :destroy ] do
-    resources :notes
+    resources :notes do
+      member do
+        put :sort
+      end
+    end
   end
 
   # Render dynamic PWA files from app/views/pwa/* (remember to link manifest in application.html.erb)

@@ -1,7 +1,7 @@
 class NotesController < ApplicationController
   before_action :set_category
   before_action :set_categories, only: [ :new, :create, :edit, :update ]
-  before_action :set_note, only: [ :edit, :update ]
+  before_action :set_note, only: [ :edit, :update, :sort ]
 
   def new
     @note = @category.notes.build
@@ -22,6 +22,7 @@ class NotesController < ApplicationController
   end
 
   def update
+    puts "note_params: #{note_params.inspect}"
     if @note.update(note_params)
       # Reorder notes after updating the position
       reorder_notes(@category, @note.position)
@@ -37,6 +38,20 @@ class NotesController < ApplicationController
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @note.errors, status: :unprocessable_entity }
       end
+    end
+  end
+
+  def sort
+    new_position = params[:position].to_i
+    parent_id = params[:parent_id].to_i
+
+    # Ensure the note belongs to the correct category
+    if @note.category_id == parent_id
+      @note.update(position: new_position)
+      reorder_notes(@category, new_position)
+      head :ok
+    else
+      head :unprocessable_entity
     end
   end
 
