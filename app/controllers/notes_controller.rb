@@ -22,10 +22,7 @@ class NotesController < ApplicationController
   end
 
   def update
-    puts "note_params: #{note_params.inspect}"
     if @note.update(note_params)
-      # Reorder notes after updating the position
-      reorder_notes(@category, @note.position)
       respond_to do |format|
         format.html do
           redirect_to edit_category_note_path(@category, @note),
