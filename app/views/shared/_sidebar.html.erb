@@ -26,20 +26,17 @@
     </div>
   </nav>
 
-  <!-- Add the sortable notes section -->
-  <div class="notes_list" data-controller="sortable" data-sortable-handle-value=".handle">
-    <% @categories.each do |category| %>
-      <div class="category" data-parent-id="<%= category.id %>">
-        <h3 class="font-semibold pbs-2"><%= category.name %></h3>
-        <div class="flex flex-col gap">
-          <% category.notes.each do |note| %>
-            <%= tag.div class: "flex items-center gap border p-3", data: { url_value: edit_category_note_path(category, note) } do %>
-              <%= image_tag "menu.svg", class: "colorize-black handle", size: 16 %>
-              <span><%= note.title %></span>
-            <% end %>
+  <% @categories.each do |category| %>
+    <div class="category" data-parent-id="<%= category.id %>">
+      <h3 class="font-semibold pbs-2"><%= category.name %></h3>
+      <div class="notes_list" data-controller="sortable" data-sortable-handle-value=".handle">
+        <% category.notes.each do |note| %>
+          <%= tag.div class: "flex items-center gap border p-3", data: { url_value: edit_category_note_path(category, note) } do %>
+            <%= image_tag "menu.svg", class: "colorize-black handle", size: 16 %>
+            <span><%= note.title %></span>
           <% end %>
-        </div>
+        <% end %>
       </div>
-    <% end %>
-  </div>
+    </div>
+  <% end %>
 </div>
