@@ -12,13 +12,14 @@
   </summary>
   <div class="menu">
     <div class="menu__group">
-      <% category.notes.each_with_index do |note, index| %>
-        <%= link_to note.title, 
-            edit_category_note_path(category, note), 
-            class: "menu__item border-bs pi-6 pb-2 #{dom_id(note)}",
-        style: "#{'background-color: var(--color-text-reversed);' if @note == note}",
-        data: { turbo_frame: "_top" } %>
-      <% end %>
+      <div class="notes_list" data-controller="sortable" data-parent-id="<%= category.id %>" data-sortable-handle-value=".handle">
+        <% category.notes.each do |note| %>
+          <%= tag.div class: "flex items-center gap border p-3", data: { url_value: category_note_path(category, note) } do %>
+            <%= image_tag "menu.svg", class: "colorize-black handle", size: 16 %>
+            <span><%= note.title %></span>
+          <% end %>
+        <% end %>
+      </div>
     </div>
   </div>
 </details>
