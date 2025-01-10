@@ -22,19 +22,11 @@ class NotesController < ApplicationController
   end
 
   def update
+    puts "note_params: #{note_params.inspect}"
     if @note.update(note_params)
-      respond_to do |format|
-        format.html do
-          redirect_to edit_category_note_path(@category, @note),
-            notice: "Note was successfully updated."
-        end
-        format.json { head :ok }
-      end
+      redirect_to edit_category_note_path(@category, @note), notice: "Note was successfully updated."
     else
-      respond_to do |format|
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @note.errors, status: :unprocessable_entity }
-      end
+      render :edit, status: :unprocessable_entity
     end
   end
 
@@ -79,7 +71,7 @@ class NotesController < ApplicationController
     end
 
     def set_categories
-      @categories = Current.user.categories.includes(:notes)
+      @categories = Current.user.categories.includes(:notes).order("notes.position ASC")
     end
 
     def set_note
