@@ -23,13 +23,8 @@ class NotesController < ApplicationController
 
   def update
     if @note.update(note_params)
-      # Reorder other notes if position changed
-      if note_params[:position].present?
-        @category.notes.where.not(id: @note.id)
-          .where("position >= ?", @note.position)
-          .update_all("position = position + 1")
-      end
-      
+      # Reorder notes after updating the position
+      reorder_notes(@category, @note.position)
       respond_to do |format|
         format.html do
           redirect_to edit_category_note_path(@category, @note),
@@ -37,6 +32,24 @@ class NotesController < ApplicationController
         end
         format.json { head :ok }
       end
+    else
+      respond_to do |format|
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: @note.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  private
+
+  def reorder_notes(category, new_position)
+    # Get all notes in the category, ordered by position
+    notes = category.notes.order(:position)
+
+    # Update positions for all notes after the new position
+    notes.each_with_index do |note, index|
+      note.update(position: index + 1) if note.position != index + 1
+    end
     else
       respond_to do |format|
         format.html { render :edit, status: :unprocessable_entity }

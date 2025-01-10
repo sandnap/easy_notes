@@ -27,11 +27,11 @@
   </nav>
 
   <% @categories.each do |category| %>
-    <div class="category" data-parent-id="<%= category.id %>">
+    <div class="category">
       <h3 class="font-semibold pbs-2"><%= category.name %></h3>
-      <div class="notes_list" data-controller="sortable" data-sortable-handle-value=".handle">
+      <div class="notes_list" data-controller="sortable" data-parent-id="<%= category.id %>" data-sortable-handle-value=".handle">
         <% category.notes.each do |note| %>
-          <%= tag.div class: "flex items-center gap border p-3", data: { url_value: edit_category_note_path(category, note) } do %>
+          <%= tag.div class: "flex items-center gap border p-3", data: { url_value: category_note_path(category, note) } do %>
             <%= image_tag "menu.svg", class: "colorize-black handle", size: 16 %>
             <span><%= note.title %></span>
           <% end %>
