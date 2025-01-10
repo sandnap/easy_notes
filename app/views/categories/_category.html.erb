@@ -16,7 +16,7 @@
         <% category.notes.each do |note| %>
           <%= tag.div class: "flex items-center gap border p-3", data: { url_value: category_note_path(category, note) } do %>
             <%= image_tag "menu.svg", class: "colorize-black handle", size: 16 %>
-            <span><%= note.title %></span>
+            <%= link_to note.title, edit_category_note_path(category, note), class: "grow", data: { turbo_frame: "_top" } %>
           <% end %>
         <% end %>
       </div>
