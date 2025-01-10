@@ -28,4 +28,4 @@ Build and run:
 
 5. Open the app in your browser at `http://localhost:3000`
 
-6. Login with `test@test.com` and password `password`
+6. Login with `test@example.com` and password `password`

@@ -9,7 +9,7 @@
 #   end
 if User.count == 0
   u = User.new
-  u.email_address = 'test@test.com'
+  u.email_address = 'test@example.com'
   u.password = 'password'
   u.save!
 end
