@@ -31,10 +31,10 @@ class NotesController < ApplicationController
       end
       
       respond_to do |format|
-        format.html { 
-          redirect_to edit_category_note_path(@category, @note), 
-          notice: "Note was successfully updated." 
-        }
+        format.html do
+          redirect_to edit_category_note_path(@category, @note),
+            notice: "Note was successfully updated."
+        end
         format.json { head :ok }
       end
     else
