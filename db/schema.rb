@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2024_12_12_035629) do
+ActiveRecord::Schema[8.0].define(version: 2025_01_10_211944) do
   create_table "action_text_rich_texts", force: :cascade do |t|
     t.string "name", null: false
     t.text "body"
@@ -65,6 +65,7 @@ ActiveRecord::Schema[8.0].define(version: 2024_12_12_035629) do
     t.integer "category_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "position"
     t.index ["category_id", "title"], name: "index_notes_on_category_id_and_title"
     t.index ["category_id"], name: "index_notes_on_category_id"
   end
