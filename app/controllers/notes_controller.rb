@@ -37,7 +37,7 @@ class NotesController < ApplicationController
     # Ensure the note belongs to the correct category
     if @note.category_id == parent_id
       @note.update(position: new_position)
-      reorder_notes(@category, new_position)
+      reorder_notes(@category, new_position, @note.id)
       head :ok
     else
       head :unprocessable_entity
@@ -46,13 +46,13 @@ class NotesController < ApplicationController
 
   private
 
-  def reorder_notes(category, new_position)
+  def reorder_notes(category, new_position, updated_note_id)
     # Get all notes in the category, ordered by position
-    notes = category.notes.order(:position)
+    notes = category.notes.where("position >= ? AND id != ?", new_position, updated_note_id).order(:position)
 
     # Update positions for all notes after the new position
-    notes.each_with_index do |note, index|
-      note.update(position: index + 1) if note.position != index + 1
+    notes.each do |note|
+      note.update(position: note.position + 1)
     end
   end
 

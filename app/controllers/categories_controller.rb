@@ -73,7 +73,7 @@ class CategoriesController < ApplicationController
   private
 
   def set_categories
-    @categories = Current.user.categories
+    @categories = Current.user.categories.includes(:notes).order("notes.position ASC")
   end
 
   def category_params
