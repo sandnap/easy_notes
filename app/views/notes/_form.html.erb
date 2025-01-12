@@ -1,4 +1,6 @@
-<div class="pbs-4 pbe-0 pis-4 pie-4">
+<div class="pbs-4 pbe-0 pis-4 pie-4"
+     data-controller="keyboard"
+     data-keyboard-target="form">
   <div class="card">
     <div class="flex items-center justify-between gap-4 mbe-4">
       <h1 class="text-2xl font-bold"><%= @note.new_record? ? "New Note in #{@category.name}" : @note.title %></h1>
@@ -6,7 +8,10 @@
 
     <%= form_with(model: [@category, @note], 
                 class: "flex flex-col gap-4",
-                data: { turbo: true }) do |f| %>
+                data: { 
+                  controller: "form",
+                  turbo: true 
+                }) do |f| %>
       <% if @note.errors.any? %>
         <div class="alert alert--negative">
           <ul class="list-disc list-inside">
