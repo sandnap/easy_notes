@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["form"]
+  static targets = ["submit"]
 
   connect() {
     document.addEventListener("keydown", this.handleKeydown.bind(this))
@@ -14,7 +14,7 @@ export default class extends Controller {
   handleKeydown(event) {
     if ((event.ctrlKey || event.metaKey) && event.key === "s") {
       event.preventDefault()
-      this.formTarget.requestSubmit()
+      this.submitTarget.click()
     }
   }
 }
