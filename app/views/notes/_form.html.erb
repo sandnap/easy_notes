@@ -24,7 +24,9 @@
       <%= f.rich_text_area :content, placeholder: "Write away..." %>
     </div>
 
-    <div class="flex justify-end gap">
+    <!-- I would like to make this div fixed to the bottom of the screen AI!
+    -->
+    <div class="flex justify-end gap sticky bottom-0 b-full bg-main pbs-4 pbe-4 pis-4 pie-4 border-be border-dark">
       <% unless @note.new_record? %>
         <%= link_to "Delete", category_note_path(@category, @note, format: :html), 
             class: "btn btn--negative", 
