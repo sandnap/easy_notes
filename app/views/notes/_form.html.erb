@@ -1,32 +1,31 @@
-<div class="card p-4">
-  <div class="flex items-center justify-between gap-4 mbe-4">
-    <h1 class="text-2xl font-bold"><%= @note.new_record? ? "New Note in #{@category.name}" : @note.title %></h1>
-  </div>
+<div class="pbs-4 pbe-0 pis-4 pie-4">
+  <div class="card">
+    <div class="flex items-center justify-between gap-4 mbe-4">
+      <h1 class="text-2xl font-bold"><%= @note.new_record? ? "New Note in #{@category.name}" : @note.title %></h1>
+    </div>
 
-  <%= form_with(model: [@category, @note], 
+    <%= form_with(model: [@category, @note], 
                 class: "flex flex-col gap-4",
                 data: { turbo: true }) do |f| %>
-    <% if @note.errors.any? %>
-      <div class="alert alert--negative">
-        <ul class="list-disc list-inside">
-          <% @note.errors.full_messages.each do |message| %>
-            <li><%= message %></li>
-          <% end %>
-        </ul>
+      <% if @note.errors.any? %>
+        <div class="alert alert--negative">
+          <ul class="list-disc list-inside">
+            <% @note.errors.full_messages.each do |message| %>
+              <li><%= message %></li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+
+      <div>
+        <%= f.text_field :title, class: "input", required: true %>
       </div>
-    <% end %>
 
-    <div>
-      <%= f.text_field :title, class: "input", required: true %>
+      <div data-turbo-permanent>
+        <%= f.rich_text_area :content, placeholder: "Write away..." %>
+      </div>
     </div>
-
-    <div data-turbo-permanent>
-      <%= f.rich_text_area :content, placeholder: "Write away..." %>
-    </div>
-
-    <!-- I would like to make this div fixed to the bottom of the screen AI!
-    -->
-    <div class="flex justify-end gap sticky bottom-0 b-full bg-main pbs-4 pbe-4 pis-4 pie-4 border-be border-dark">
+    <div style="bottom: -24px" class="flex justify-end gap sticky bg-main pb-4 pi-4 border-be border-dark">
       <% unless @note.new_record? %>
         <%= link_to "Delete", category_note_path(@category, @note, format: :html), 
             class: "btn btn--negative", 
