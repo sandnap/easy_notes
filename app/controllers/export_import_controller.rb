@@ -51,6 +51,6 @@ class ExportImportController < ApplicationController
   private
 
   def get_categories
-    @categories = Current.user.categories.includes(:notes)
+    @categories = Current.user.categories.includes(:notes).order("notes.position ASC")
   end
 end

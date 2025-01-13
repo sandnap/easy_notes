@@ -112,13 +112,8 @@ class NotesController < ApplicationController
   def reorder_notes(category, new_position, updated_note_id)
     # Get all notes in the category, ordered by position
     notes = category.notes.order(:position)
-    puts "***********************************"
-    puts "New position: #{new_position}"
-    puts "Updated note id: #{updated_note_id}"
-    puts "Notes: #{notes.map { |note| note.title + " - #{note.position}" }}"
-    puts "***********************************"
     notes.each_with_index do |note, index|
-      if index > new_position && note.id != updated_note_id
+      if index >= new_position && note.id != updated_note_id
         note.update(position: index + 1)
       end
     end
