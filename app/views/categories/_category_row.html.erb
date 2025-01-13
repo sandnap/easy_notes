@@ -6,11 +6,9 @@
       <button class="btn btn--icon" data-action="dialog#showModal" title="Edit Category">
         <%= image_tag "edit.svg", alt: "Edit" %>
       </button>
-
-      <%= button_to category_path(category), 
-          method: :delete,
+      <%= link_to category_path(category), 
+          data: { turbo_method: :delete, turbo_stream: "true", turbo_confirm: "Are you sure? This will delete the category and all #{category.notes_count} notes within it." },
           class: "btn btn--icon", 
-          form: { data: { turbo_confirm: "Are you sure? This will delete the category and all #{category.notes_count} notes within it." } },
           title: "Delete Category" do %>
         <%= image_tag "trash.svg", alt: "Delete" %>
       <% end %>

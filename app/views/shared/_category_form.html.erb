@@ -29,7 +29,7 @@
 
       <div class="flex justify-end gap mbs-4">
         <button type="button" class="btn" data-action="dialog#close">Cancel</button>
-        <%= f.submit "Save", class: "btn btn--primary" %>
+        <%= f.submit "Save", data: { turbo_stream: "true" }, class: "btn btn--primary" %>
       </div>
     <% end %>
   </div>

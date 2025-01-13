@@ -38,7 +38,7 @@ class CategoriesController < ApplicationController
           flash[:notice] = "Category was successfully updated."
           render turbo_stream: [
             # The mobile and laptop sidebar
-            turbo_stream.replace_all(".category_#{@category.id}", partial: "categories/category",  locals: { category: @category }),
+            turbo_stream.replace_all(".category_list_title_#{@category.id}", partial: "categories/category_list_title",  locals: { category: @category }),
             # The edit form
             turbo_stream.replace("edit_category_#{@category.id}", partial: "categories/category_row",  locals: { category: @category }),
             turbo_stream.update("flash", partial: "shared/flash")

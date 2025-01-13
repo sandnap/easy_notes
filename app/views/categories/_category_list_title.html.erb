@@ -1,0 +1,9 @@
+<div class="category_list_title_<%= category.id %>">
+  <%= link_to new_category_note_path(category), 
+  class: "btn btn--icon p-1 mie-4 inline-flex items-center justify-center rounded-full btn--secondary opacity-100", 
+  title: "Add note to #{category.name}",
+  data: { turbo_stream: "true" } do %>
+    <%= image_tag "plus.svg", alt: "Add note", size: "20" %>
+  <% end %>
+  <span class="grow"><%= category.name %></span>
+</div>
