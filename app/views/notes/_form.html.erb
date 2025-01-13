@@ -31,10 +31,10 @@
     </div>
     <div style="bottom: -24px" class="flex justify-end gap sticky bg-main pb-4 pi-4 border-be border-dark">
       <% unless @note.new_record? %>
-        <%= link_to "Delete", category_note_path(@category, @note, format: :html), 
-            class: "btn btn--negative", 
-            data: { turbo_method: :delete, turbo_frame: "_top", turbo_confirm: "Are you sure you want to delete this note?" }
-        %>
+        <%= button_to "Delete", category_note_path(@category, @note), 
+          method: :delete,
+          class: "btn btn--icon", 
+          form: { data: { turbo_frame: "_top", turbo_confirm: "Are you sure you want to delete this note?" } } %>
       <% end %>
       <%= link_to @note.new_record? ? "Cancel" : "Close", root_path, data: { turbo_frame: "_top", turbo_prefetch: false }, class: "btn" %>
       <%= f.submit "Save", data: { turbo_frame: "_top", keyboard_target: "submit" }, class: "btn btn--primary" %>
