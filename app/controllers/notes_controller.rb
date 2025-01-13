@@ -5,6 +5,14 @@ class NotesController < ApplicationController
 
   def new
     @note = @category.notes.build
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.replace("note-form", partial: "form", locals: { note: @note })
+        ]
+      end
+      format.html { render :new }
+    end
   end
 
   def create
@@ -13,11 +21,12 @@ class NotesController < ApplicationController
     if @note.save
       @note = @category.notes.find(@note.id) # Reload to ensure associations
       respond_to do |format|
+        flash[:notice] = "Note was successfully created."
         format.turbo_stream do
           render turbo_stream: [
-            turbo_stream.append("##{dom_id(@category)} .notes_list", partial: "categories/note", locals: { note: @note, category: @category }),
+            turbo_stream.append_all("#category_#{@category.id} .notes_list", partial: "categories/note", locals: { note: @note, category: @category }),
             turbo_stream.replace("note-form", partial: "form", locals: { note: @note }),
-            turbo_stream.update("flash", partial: "shared/flash", locals: { notice: "Note was successfully created." })
+            turbo_stream.update("flash", partial: "shared/flash")
           ]
         end
         format.html { redirect_to edit_category_note_path(@category, @note), notice: "Note was successfully created." }
@@ -25,9 +34,10 @@ class NotesController < ApplicationController
     else
       respond_to do |format|
         format.turbo_stream do
+          flash[:alert] = "Note could not be created."
           render turbo_stream: [
             turbo_stream.replace("note-form", partial: "form", locals: { note: @note }),
-            turbo_stream.update("flash", partial: "shared/flash", locals: { alert: "Note could not be created." })
+            turbo_stream.update("flash", partial: "shared/flash")
           ]
         end
         format.html { render :new, status: :unprocessable_entity }
@@ -50,10 +60,11 @@ class NotesController < ApplicationController
   def update
     if @note.update(note_params)
       respond_to do |format|
+        flash[:notice] = "Note was successfully updated."
         format.turbo_stream do
           render turbo_stream: [
             turbo_stream.replace("note-form", partial: "form", locals: { note: @note }),
-            turbo_stream.update("flash", partial: "shared/flash", locals: { notice: "Note was successfully updated." })
+            turbo_stream.update("flash", partial: "shared/flash")
           ]
         end
         format.html { redirect_to edit_category_note_path(@category, @note), notice: "Note was successfully updated." }
@@ -83,10 +94,11 @@ class NotesController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream do
+        flash[:notice] = "Note was successfully deleted."
         puts "destroy"
         render turbo_stream: [
           turbo_stream.remove_all("[data-note-id='#{@note.id}']"),
-          turbo_stream.update("flash", partial: "shared/flash", locals: { notice: "Note was successfully deleted." }),
+          turbo_stream.update("flash", partial: "shared/flash"),
           turbo_stream.replace("note-form", partial: "home/select_note")
         ]
       end

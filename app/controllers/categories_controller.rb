@@ -10,12 +10,13 @@ class CategoriesController < ApplicationController
     if @category.save
       respond_to do |format|
         format.turbo_stream do
+          flash[:notice] = "Category was successfully created."
           render turbo_stream: [
             # The mobile and laptop sidebar
             turbo_stream.prepend_all(".categories_list", partial: "categories/category",  locals: { category: @category }),
             # The edit form
             turbo_stream.prepend("categories_edit_list", partial: "categories/category_row",  locals: { category: @category }),
-            turbo_stream.update("flash", partial: "shared/flash", locals: { notice: "Category was successfully created." })
+            turbo_stream.update("flash", partial: "shared/flash")
           ]
         end
         format.html { redirect_to root_path, notice: "Category was successfully created." }
@@ -34,12 +35,13 @@ class CategoriesController < ApplicationController
     if @category.update(category_params)
       respond_to do |format|
         format.turbo_stream do
+          flash[:notice] = "Category was successfully updated."
           render turbo_stream: [
             # The mobile and laptop sidebar
             turbo_stream.replace_all(".category_#{@category.id}", partial: "categories/category",  locals: { category: @category }),
             # The edit form
             turbo_stream.replace("edit_category_#{@category.id}", partial: "categories/category_row",  locals: { category: @category }),
-            turbo_stream.update("flash", partial: "shared/flash", locals: { notice: "Category was successfully updated." })
+            turbo_stream.update("flash", partial: "shared/flash")
           ]
         end
         format.html { redirect_to categories_path, notice: "Category was successfully updated." }
@@ -58,12 +60,13 @@ class CategoriesController < ApplicationController
 
     respond_to do |format|
       format.turbo_stream do
+        flash[:notice] = "Category and all its notes were successfully deleted."
         render turbo_stream: [
           # The mobile and laptop sidebar
           turbo_stream.remove_all(".category_#{@category.id}"),
           # The edit form
           turbo_stream.remove("edit_category_#{@category.id}"),
-          turbo_stream.update("flash", partial: "shared/flash", locals: { notice: "Category and all its notes were successfully deleted." })
+          turbo_stream.update("flash", partial: "shared/flash")
         ]
       end
       format.html { redirect_to categories_path, notice: "Category and all its notes were successfully deleted." }
