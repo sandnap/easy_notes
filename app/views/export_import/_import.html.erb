@@ -8,7 +8,8 @@
       <%= f.file_field :file, class: "input mbs-2", accept: "application/x-yaml,text/yaml", required: true %>
     </div>
 
-    <div class="flex justify-end">
+    <div class="flex justify-end gap">
+      <%= link_to "Close", root_path, data: { turbo: false }, class: "btn" %>
       <%= f.submit "Import", class: "btn btn--primary" %>
     </div>
   <% end %>
