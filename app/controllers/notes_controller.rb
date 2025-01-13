@@ -64,6 +64,7 @@ class NotesController < ApplicationController
         format.turbo_stream do
           render turbo_stream: [
             turbo_stream.replace("note-form", partial: "form", locals: { note: @note }),
+            turbo_stream.replace_all("[data-note-id='#{@note.id}']", partial: "categories/note", locals: { note: @note, category: @category }),
             turbo_stream.update("flash", partial: "shared/flash")
           ]
         end
@@ -111,6 +112,11 @@ class NotesController < ApplicationController
   def reorder_notes(category, new_position, updated_note_id)
     # Get all notes in the category, ordered by position
     notes = category.notes.order(:position)
+    puts "***********************************"
+    puts "New position: #{new_position}"
+    puts "Updated note id: #{updated_note_id}"
+    puts "Notes: #{notes.map { |note| note.title + " - #{note.position}" }}"
+    puts "***********************************"
     notes.each_with_index do |note, index|
       if index > new_position && note.id != updated_note_id
         note.update(position: index + 1)
