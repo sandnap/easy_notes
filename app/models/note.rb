@@ -4,6 +4,7 @@ class Note < ApplicationRecord
   validates :title, presence: true
   validates :content, presence: true
   validates :position, presence: true
+  validates :category, presence: true
 
   has_rich_text :content
 
@@ -12,6 +13,7 @@ class Note < ApplicationRecord
   private
 
   def set_default_position
+    return unless category
     self.position ||= (category.notes.maximum(:position) || 0) + 1
   end
 end

@@ -2,8 +2,10 @@ one:
   title: First Note
   content: First note content
   category: one
+  position: 1
 
 two:
   title: Second Note
   content: Second note content
-  category: two 
+  category: two
+  position: 1 
