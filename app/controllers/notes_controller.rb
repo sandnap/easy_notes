@@ -19,10 +19,18 @@ class NotesController < ApplicationController
   end
 
   def edit
+    @the_note = @note
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.replace("note-form", partial: "form", locals: { note: @note }, action: "advance")
+        ]
+      end
+      format.html { render :edit }
+    end
   end
 
   def update
-    puts "note_params: #{note_params.inspect}"
     if @note.update(note_params)
       redirect_to edit_category_note_path(@category, @note), notice: "Note was successfully updated."
     else
@@ -48,11 +56,11 @@ class NotesController < ApplicationController
 
   def reorder_notes(category, new_position, updated_note_id)
     # Get all notes in the category, ordered by position
-    notes = category.notes.where("position >= ? AND id != ?", new_position, updated_note_id).order(:position)
-
-    # Update positions for all notes after the new position
-    notes.each do |note|
-      note.update(position: note.position + 1)
+    notes = category.notes.order(:position)
+    notes.each_with_index do |note, index|
+      if index > new_position && note.id != updated_note_id
+        note.update(position: index + 1)
+      end
     end
   end
 
