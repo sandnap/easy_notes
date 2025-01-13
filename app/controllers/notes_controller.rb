@@ -12,9 +12,26 @@ class NotesController < ApplicationController
 
     if @note.save
       @note = @category.notes.find(@note.id) # Reload to ensure associations
-      redirect_to edit_category_note_path(@category, @note), notice: "Note was successfully created."
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: [
+            turbo_stream.append("##{dom_id(@category)} .notes_list", partial: "categories/note", locals: { note: @note, category: @category }),
+            turbo_stream.replace("note-form", partial: "form", locals: { note: @note }),
+            turbo_stream.update("flash", partial: "shared/flash", locals: { notice: "Note was successfully created." })
+          ]
+        end
+        format.html { redirect_to edit_category_note_path(@category, @note), notice: "Note was successfully created." }
+      end
     else
-      render :new, status: :unprocessable_entity
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: [
+            turbo_stream.replace("note-form", partial: "form", locals: { note: @note }),
+            turbo_stream.update("flash", partial: "shared/flash", locals: { alert: "Note could not be created." })
+          ]
+        end
+        format.html { render :new, status: :unprocessable_entity }
+      end
     end
   end
 

@@ -1,0 +1,4 @@
+<%= tag.div class: "note flex items-center gap border p-3", data: { note_id: note.id, url_value: "#{category_note_path(category, note)}/sort" } do %>
+  <%= image_tag "menu.svg", class: "colorize-black handle", size: 16 %>
+  <%= link_to note.title, edit_category_note_path(category, note), class: "grow", data: { note_id: note.id, action: "click->category-highlight#highlight", turbo: "true", turbo_stream: "true", turbo_prefetch: "false" } %>
+<% end %> 

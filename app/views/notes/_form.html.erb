@@ -9,7 +9,8 @@
                 class: "flex flex-col gap-4",
                 data: { 
                   controller: "form",
-                  turbo: true 
+                  turbo: true,
+                  turbo_frame: "_top"
                 }) do |f| %>
       <% if @note.errors.any? %>
         <div class="alert alert--negative">
@@ -33,7 +34,7 @@
       <% unless @note.new_record? %>
         <%= button_to "Delete", category_note_path(@category, @note), 
           method: :delete,
-          class: "btn btn--icon", 
+          class: "btn btn--negative", 
           form: { data: { turbo_frame: "_top", turbo_confirm: "Are you sure you want to delete this note?" } } %>
       <% end %>
       <%= link_to @note.new_record? ? "Cancel" : "Close", root_path, data: { turbo_frame: "_top", turbo_prefetch: false }, class: "btn" %>
