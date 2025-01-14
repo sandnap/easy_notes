@@ -16,6 +16,7 @@
   </div>
 
   <%= link_to categories_path, class: "btn btn--secondary mbe-8 text-center #{authenticated? ? '' : 'disabled'}", 
+      style: authenticated? ? '' : 'pointer-events: none;',
       title: authenticated? ? 'Edit Categories' : 'Please login to edit categories' do %>
     Edit Categories
   <% end %>

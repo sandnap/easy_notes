@@ -63,7 +63,6 @@ class NotesController < ApplicationController
         flash[:notice] = "Note was successfully updated."
         format.turbo_stream do
           render turbo_stream: [
-            turbo_stream.replace("note-form", partial: "form", locals: { note: @note }),
             turbo_stream.replace_all("[data-note-id='#{@note.id}']", partial: "categories/note", locals: { note: @note, category: @category }),
             turbo_stream.update("flash", partial: "shared/flash")
           ]
