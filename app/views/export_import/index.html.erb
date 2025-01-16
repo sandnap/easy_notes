@@ -1,8 +1,6 @@
 <!-- The id here is necessary to allow users to navigate to a note from the categories index page -->
-<div id="note-form">
-  <h1 class="font-bold text-4xl">Import/Export Notes</h1>
-  <p class="mb-4">Export your notes to a file or import them from a file. When importing, the category and note names will be used to identify records that are already in your database. If a matching category is found, new notes will be added to that category. If a matching note is found, it will be updated with the new data. New categories and all of their notes will be created.</p>
-  <h1 class="font-bold text-2xl mb-4">Export Notes</h1>
-  <%= link_to "Export Notes", export_import_export_path, class: "btn", data: { turbo: false } %>
-  <%= render "import" %>
-</div>
+<h1 class="font-bold text-4xl">Import/Export Notes</h1>
+<p class="mb-4">Export your notes to a file or import them from a file. When importing, the category and note names will be used to identify records that are already in your database. If a matching category is found, new notes will be added to that category. If a matching note is found, it will be updated with the new data. New categories and all of their notes will be created.</p>
+<h1 class="font-bold text-2xl mb-4">Export Notes</h1>
+<%= link_to "Export Notes", export_import_export_path, class: "btn", data: { turbo: false } %>
+<%= render "import" %>

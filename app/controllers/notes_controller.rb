@@ -8,7 +8,7 @@ class NotesController < ApplicationController
     respond_to do |format|
       format.turbo_stream do
         render turbo_stream: [
-          turbo_stream.replace("note-form", partial: "form", locals: { note: @note })
+          turbo_stream.update("main_frame", partial: "form", locals: { note: @note })
         ]
       end
       format.html { render :new }
@@ -25,7 +25,7 @@ class NotesController < ApplicationController
         format.turbo_stream do
           render turbo_stream: [
             turbo_stream.append_all("#category_#{@category.id} .notes_list", partial: "categories/note", locals: { note: @note, category: @category }),
-            turbo_stream.replace("note-form", partial: "form", locals: { note: @note }),
+            turbo_stream.update("main_frame", partial: "form", locals: { note: @note }),
             turbo_stream.update("flash", partial: "shared/flash")
           ]
         end
@@ -36,7 +36,7 @@ class NotesController < ApplicationController
         format.turbo_stream do
           flash[:alert] = "Note could not be created."
           render turbo_stream: [
-            turbo_stream.replace("note-form", partial: "form", locals: { note: @note }),
+            turbo_stream.update("main_frame", partial: "form", locals: { note: @note }),
             turbo_stream.update("flash", partial: "shared/flash")
           ]
         end
@@ -50,7 +50,7 @@ class NotesController < ApplicationController
     respond_to do |format|
       format.turbo_stream do
         render turbo_stream: [
-          turbo_stream.replace("note-form", partial: "form", locals: { note: @note }, action: "advance")
+          turbo_stream.update("main_frame", partial: "form", locals: { note: @note }, action: "advance")
         ]
       end
       format.html { render :edit }
@@ -99,7 +99,7 @@ class NotesController < ApplicationController
         render turbo_stream: [
           turbo_stream.remove_all("[data-note-id='#{@note.id}']"),
           turbo_stream.update("flash", partial: "shared/flash"),
-          turbo_stream.replace("note-form", partial: "home/select_note")
+          turbo_stream.update("main_frame", partial: "home/select_note")
         ]
       end
       format.html { redirect_to root_path, notice: "Note was successfully deleted." }
