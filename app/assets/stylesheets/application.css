@@ -9,6 +9,14 @@
  * Consider organizing styles into separate files for maintainability.
  */
 
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.disabled {
+  cursor: not-allowed;
+}
+
 .handle {
   cursor: grab;
 }

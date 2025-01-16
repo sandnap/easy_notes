@@ -29,8 +29,14 @@
       <div data-turbo-permanent>
         <%= f.rich_text_area :content, placeholder: "Write away..." %>
       </div>
-      <div style="bottom: -24px; width: 260px; align-self: flex-end;" class="flex justify-end gap sticky bg-main pb-4 pi-4 border border-dark">
+      <div style="bottom: -24px; width: <%= @note.new_record? ? '180px;' : '350px;' %> align-self: flex-end;" class="flex justify-end gap sticky bg-main pb-4 pi-4 border border-dark">
         <% unless @note.new_record? %>
+          <%= button_tag type: "button", class: "btn btn--icon", data: { action: "click->history#back" } do %>
+            <%= image_tag "chevron-left.svg", class: "colorize-black cursor-pointer", size: 24 %>
+          <% end %>
+          <%= button_tag type: "button", class: "btn btn--icon", data: { action: "click->history#forward" } do %>
+            <%= image_tag "chevron-right.svg", class: "colorize-black", size: 24 %>
+          <% end %>
           <%= link_to "Delete",
             category_note_path(@category, @note),
             data: { turbo_method: :delete, turbo_stream: "true", turbo_confirm: "Are you sure you want to delete this note?" },
