@@ -49,6 +49,13 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # Performance-focused linting [https://github.com/rubocop/rubocop-performance]
+  gem "rubocop-performance", require: false
+
+  # Code quality analysis [https://github.com/faisal/rubycritic]
+  # NOTE: Hopefully a bug will be fixed and we can just use rubycritic main
+  gem "rubycritic", github: "faisal/rubycritic", branch: "fix_flog"
 end
 
 group :development do
