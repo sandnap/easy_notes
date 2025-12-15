@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Configuration
+SERVER_IP="5.78.99.2"
+SERVER_USER="root"
+CONTAINER_NAME="easy_notes"
+LOCAL_BACKUP_DIR="./.backups/production"
+RETENTION_DAYS=30
+LOG_FILE="${LOCAL_BACKUP_DIR}/backup.log"
+
+# Function to log messages
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+# Create backup directory
+mkdir -p "$LOCAL_BACKUP_DIR"
+
+# Get container ID
+CONTAINER_ID=$(ssh ${SERVER_USER}@${SERVER_IP} "docker ps --filter name=${CONTAINER_NAME} --format '{{.ID}}'" 2>/dev/null)
+
+if [ -z "$CONTAINER_ID" ]; then
+    log_message "ERROR: Could not find container ID"
+    exit 1
+fi
+
+# Create backup filename with timestamp
+BACKUP_FILENAME="production_$(date +%Y%m%d_%H%M%S).sqlite3"
+REMOTE_TEMP_PATH="/rails/storage/backup_${BACKUP_FILENAME}"
+
+# Create backup inside container
+ssh ${SERVER_USER}@${SERVER_IP} "docker exec ${CONTAINER_ID} sqlite3 /rails/storage/production.sqlite3 \".backup ${REMOTE_TEMP_PATH}\"" || exit 1
+
+# Copy backup from container to host
+ssh ${SERVER_USER}@${SERVER_IP} "docker cp ${CONTAINER_ID}:${REMOTE_TEMP_PATH} /root/${BACKUP_FILENAME}" || exit 1
+
+# Copy backup to local machine
+scp ${SERVER_USER}@${SERVER_IP}:/root/${BACKUP_FILENAME} "${LOCAL_BACKUP_DIR}/${BACKUP_FILENAME}" || exit 1
+
+# Cleanup remote files
+ssh ${SERVER_USER}@${SERVER_IP} "rm -f /root/${BACKUP_FILENAME} && docker exec ${CONTAINER_ID} rm -f ${REMOTE_TEMP_PATH}"
+
+# Clean up old backups
+find "$LOCAL_BACKUP_DIR" -name "production_*.sqlite3" -type f -mtime +${RETENTION_DAYS} -delete
+
+log_message "Backup completed: ${BACKUP_FILENAME}"
