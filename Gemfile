@@ -70,4 +70,8 @@ group :test do
   gem "selenium-webdriver"
 end
 
-gem "css-zero", "~> 1.0.6"
+# Pin to 0.0.89: views + vendored component CSS are written against this
+# version's utility classes. The 1.0.x bump renamed utilities (gap-4 -> gap-half,
+# dropped .hidden/.sticky/.flex-grow/.hide@md) and broke styling. Migrate views
+# first before bumping. See git commit 52a6127.
+gem "css-zero", "~> 0.0.89"

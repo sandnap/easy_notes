@@ -28,7 +28,17 @@ threads_count = ENV.fetch("RAILS_MAX_THREADS", 3)
 threads threads_count, threads_count
 
 # Specifies the `port` that Puma will listen on to receive requests; default is 3000.
-port ENV.fetch("PORT", 3000)
+bport = ENV.fetch("PORT", 3000)
+
+# Bind to all interfaces (0.0.0.0) so the app is reachable from other machines
+# on the LAN (e.g. a laptop on the same network). This REPLACES the default
+# 127.0.0.1-only binding, so a remote laptop can reach it at http://<server-ip>:3000.
+# Opt out per-run with `RAILS_BIND_ALL=0 ./bin/dev` to keep the localhost-only default.
+if ENV["RAILS_BIND_ALL"] == "0"
+  port bport
+else
+  bind "tcp://#{ENV.fetch("BIND_HOST", "0.0.0.0")}:#{bport}"
+end
 
 # Allow puma to be restarted by `bin/rails restart` command.
 plugin :tmp_restart
