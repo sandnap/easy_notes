@@ -37,6 +37,7 @@ class VimEditorTest < ApplicationSystemTestCase
     # Clicking toggle turns Vim mode off
     page.execute_script("document.querySelector(\"[data-vim-editor-target='toggleButton']\").click()")
     assert_selector "[data-vim-editor-target='toggleButton']", text: "Vim: Off"
+    assert_selector "[data-vim-editor-target='badge']", visible: :hidden
     assert_no_selector "[data-vim-editor-target='badge']", text: "NORMAL"
     assert_no_selector ".vim-block-cursor"
   end

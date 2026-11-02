@@ -134,7 +134,7 @@ export default class extends Controller {
     const textarea = this.textarea
     if (this.isMobile) {
       if (this.hasToggleButtonTarget) this.toggleButtonTarget.classList.add("hidden")
-      if (this.hasBadgeTarget) this.badgeTarget.classList.add("hidden")
+      if (this.hasBadgeTarget) this.badgeTarget.hidden = true
       textarea?.setAttribute("data-vim-mode", "off")
       return
     }
@@ -148,11 +148,10 @@ export default class extends Controller {
     this.element.setAttribute("data-vim-ready", "true")
 
     if (this.hasBadgeTarget) {
+      this.badgeTarget.hidden = !this.enabled
       if (!this.enabled) {
-        this.badgeTarget.classList.add("hidden")
         this.badgeTarget.textContent = ""
       } else {
-        this.badgeTarget.classList.remove("hidden")
         const prefix = `${this.countBuffer}${this.pendingKey}`
         if (this.commandBuffer !== null) {
           this.badgeTarget.textContent = `:${this.commandBuffer}`

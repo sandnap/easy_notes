@@ -1,6 +1,6 @@
 <h1 class="font-bold text-4xl mbe-4">Sign in</h1>
 
-<%= form_with url: session_url, data: { turbo_frame: "_top" }, class: "flex flex-col gap" do |form| %>
+<%= form_with url: session_url, data: { turbo: false }, class: "flex flex-col gap" do |form| %>
   <%= form.email_field :email_address, required: true, autofocus: true, autocomplete: "username", placeholder: "Enter your email address", value: params[:email_address], class: "input" %>
   <%= form.password_field :password, required: true, autocomplete: "current-password", placeholder: "Enter your password", maxlength: 72, class: "input" %>
 

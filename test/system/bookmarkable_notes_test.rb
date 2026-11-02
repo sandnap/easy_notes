@@ -50,7 +50,7 @@ class BookmarkableNotesTest < ApplicationSystemTestCase
         form.requestSubmit()
       JS
       assert_no_selector "h1", text: "Sign in", wait: 10
-      visit root_path
       assert_selector "#sidebar details#category_#{@category.id}", wait: 5
+      assert_current_path root_path
     end
 end

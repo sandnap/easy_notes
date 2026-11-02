@@ -51,8 +51,8 @@ class NotesSearchTest < ApplicationSystemTestCase
         form.requestSubmit()
       JS
       assert_no_selector "h1", text: "Sign in", wait: 5
-      visit root_path
       assert_selector "#sidebar details#category_#{@category.id}", wait: 5
+      assert_current_path root_path
       assert_selector "#sidebar input[data-notes-search-ready='true']", wait: 5
     end
 end

@@ -1,3 +1,4 @@
+<% if authenticated? %>
 <div class="flex flex-col">
   <div class="pbs-3 pbe-2">
     <input type="search" name="q" placeholder="Search notes…" autocomplete="off"
@@ -9,10 +10,9 @@
 
   <div data-controller="dialog">
     <div class="flex">
-      <button class="btn btn--primary grow mbe-4" 
+      <button class="btn btn--primary grow mbe-4"
             data-action="dialog#showModal"
-            <%= 'disabled' unless authenticated? %>
-            title="<%= authenticated? ? 'Add Category' : 'Please login to add categories' %>">
+            title="Add Category">
         Add Category
       </button>
     </div>
@@ -23,11 +23,7 @@
     </div>
   </div>
 
-  <%= link_to categories_path, class: "btn btn--secondary mbe-8 text-center #{authenticated? ? '' : 'disabled'}", 
-      style: authenticated? ? '' : 'pointer-events: none;',
-      title: authenticated? ? 'Edit Categories' : 'Please login to edit categories' do %>
-    Edit Categories
-  <% end %>
+  <%= link_to "Edit Categories", categories_path, class: "btn btn--secondary mbe-8 text-center", title: "Edit Categories" %>
 
   <nav class="accordion" id="categories" data-controller="menu">
     <div class="categories_list menu__group">
@@ -35,3 +31,4 @@
     </div>
   </nav>
 </div>
+<% end %>
