@@ -6,6 +6,10 @@ export default class extends Controller {
 
   #timer
 
+  connect() {
+    this.element.setAttribute("data-notes-search-ready", "true")
+  }
+
   search() {
     clearTimeout(this.#timer)
     this.#timer = setTimeout(() => this.#run(), 200)
