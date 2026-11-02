@@ -104,6 +104,23 @@ export function wordBackward(text, offset) {
   return i
 }
 
+// Next occurrence of char on the current line, starting after offset.
+// A count that runs past the line leaves the cursor where it started.
+export function findCharForward(text, offset, char, count = 1) {
+  if (!char || char.length !== 1) return offset
+  const { end } = lineBoundsAt(text, offset)
+  const times = Number.isInteger(count) && count > 0 ? count : 1
+  let from = Math.max(0, Math.min(offset, text.length))
+  let found = from
+  for (let n = 0; n < times; n++) {
+    const idx = text.indexOf(char, from + 1)
+    if (idx === -1 || idx >= end) return offset
+    found = idx
+    from = idx
+  }
+  return found
+}
+
 export function wordEnd(text, offset) {
   const len = text.length
   if (len === 0) return 0
@@ -125,4 +142,47 @@ export function fullLineDeleteRange(text, offset) {
     return { range: [start - 1, end], lineText }
   }
   return { range: [start, end], lineText }
+}
+
+// A caret sitting on a line's exclusive end (the offset `$` uses) has no
+// character of its own. Character visual must not step past that offset.
+function isEndCaret(text, offset) {
+  return offset === lineBoundsAt(text, offset).end
+}
+
+// Half-open range for character or line visual mode. Line selections use the
+// same newline rule as fullLineDeleteRange: the register text omits the
+// boundary newline, and the deleted range consumes it.
+export function visualRange(text, anchor, head, linewise = false) {
+  const length = text.length
+  const safeAnchor = Math.max(0, Math.min(anchor ?? 0, length))
+  const safeHead = Math.max(0, Math.min(head ?? 0, length))
+  if (linewise) return lineVisualRange(text, safeAnchor, safeHead)
+  return characterVisualRange(text, safeAnchor, safeHead)
+}
+
+function characterVisualRange(text, anchor, head) {
+  const start = Math.min(anchor, head)
+  const end = Math.max(anchor, head)
+  const exclusiveEnd = isEndCaret(text, end) ? end : Math.min(text.length, end + 1)
+  return {
+    range: [start, exclusiveEnd],
+    text: text.slice(start, exclusiveEnd),
+    linewise: false
+  }
+}
+
+function lineVisualRange(text, anchor, head) {
+  const earlier = lineBoundsAt(text, Math.min(anchor, head))
+  const later = lineBoundsAt(text, Math.max(anchor, head))
+  const start = earlier.start
+  const end = later.end
+  const lineText = text.slice(start, end)
+  if (end < text.length && text[end] === "\n") {
+    return { range: [start, end + 1], text: lineText, linewise: true }
+  }
+  if (start > 0 && text[start - 1] === "\n") {
+    return { range: [start - 1, end], text: lineText, linewise: true }
+  }
+  return { range: [start, end], text: lineText, linewise: true }
 }

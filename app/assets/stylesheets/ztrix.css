@@ -102,7 +102,9 @@ textarea.note-editor {
     outline: 0;
   }
 
-  &[data-vim-mode="normal"] {
+  &[data-vim-mode="normal"],
+  &[data-vim-mode="visual"],
+  &[data-vim-mode="visual-line"] {
     caret-color: transparent;
   }
 }

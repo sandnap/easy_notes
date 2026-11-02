@@ -9,7 +9,9 @@ import {
   wordForward,
   wordBackward,
   wordEnd,
-  fullLineDeleteRange
+  findCharForward,
+  fullLineDeleteRange,
+  visualRange
 } from "lib/vim_motions"
 
 const STORAGE_KEY = "easy_notes.vim_mode"
@@ -50,6 +52,8 @@ export default class extends Controller {
     this.countBuffer = ""
     this.commandBuffer = null
     this.preferredColumn = null
+    this.visualAnchor = null
+    this.visualHead = null
     this.register = { text: "", linewise: false }
     this.undoStack = []
     this.redoStack = []
@@ -57,10 +61,11 @@ export default class extends Controller {
 
     this.boundKeydown = this.#onKeydown.bind(this)
     this.boundCursorUpdate = this.#updateBlockCursor.bind(this)
+    this.boundClick = this.#onClick.bind(this)
 
     this.element.addEventListener("focusin", this.boundCursorUpdate)
     this.element.addEventListener("focusout", this.boundCursorUpdate)
-    this.element.addEventListener("click", this.boundCursorUpdate)
+    this.element.addEventListener("click", this.boundClick)
     this.textarea?.addEventListener("scroll", this.boundCursorUpdate)
     this.textarea?.addEventListener("input", this.boundCursorUpdate)
     window.addEventListener("keydown", this.boundKeydown, true)
@@ -75,7 +80,7 @@ export default class extends Controller {
   disconnect() {
     this.element.removeEventListener("focusin", this.boundCursorUpdate)
     this.element.removeEventListener("focusout", this.boundCursorUpdate)
-    this.element.removeEventListener("click", this.boundCursorUpdate)
+    this.element.removeEventListener("click", this.boundClick)
     this.textarea?.removeEventListener("scroll", this.boundCursorUpdate)
     this.textarea?.removeEventListener("input", this.boundCursorUpdate)
     window.removeEventListener("keydown", this.boundKeydown, true)
@@ -97,6 +102,8 @@ export default class extends Controller {
     this.countBuffer = ""
     this.commandBuffer = null
     this.preferredColumn = null
+    this.visualAnchor = null
+    this.visualHead = null
     this.#syncUI()
     this.textarea?.focus()
   }
@@ -156,9 +163,9 @@ export default class extends Controller {
         if (this.commandBuffer !== null) {
           this.badgeTarget.textContent = `:${this.commandBuffer}`
         } else if (prefix) {
-          this.badgeTarget.textContent = `NORMAL (${prefix})`
+          this.badgeTarget.textContent = `${this.#modeLabel()} (${prefix})`
         } else {
-          this.badgeTarget.textContent = this.mode.toUpperCase()
+          this.badgeTarget.textContent = this.#modeLabel()
         }
       }
     }
@@ -271,7 +278,165 @@ export default class extends Controller {
   }
 
   #cursorOffset() {
+    if (this.#inVisualMode() && this.visualHead != null) return this.visualHead
     return this.textarea?.selectionStart ?? 0
+  }
+
+  #inVisualMode() {
+    return this.mode === "visual" || this.mode === "visual-line"
+  }
+
+  #modeLabel() {
+    switch (this.mode) {
+      case "visual": return "VISUAL"
+      case "visual-line": return "VISUAL LINE"
+      case "insert": return "INSERT"
+      default: return "NORMAL"
+    }
+  }
+
+  #onClick(event) {
+    if (this.#inVisualMode() && event.target === this.textarea) this.#leaveVisualForPointer()
+    this.#updateBlockCursor()
+  }
+
+  #leaveVisualForPointer() {
+    const pos = this.textarea?.selectionStart ?? 0
+    this.mode = "normal"
+    this.visualAnchor = null
+    this.visualHead = null
+    this.pendingKey = ""
+    this.countBuffer = ""
+    this.preferredColumn = null
+    this.#setCursor(pos)
+  }
+
+  #enterVisual(linewise) {
+    if (!this.#inVisualMode()) {
+      const pos = this.#cursorOffset()
+      this.visualAnchor = pos
+      this.visualHead = pos
+    }
+    this.mode = linewise ? "visual-line" : "visual"
+    this.pendingKey = ""
+    this.countBuffer = ""
+    this.commandBuffer = null
+    this.#applyVisualSelection()
+  }
+
+  #exitVisual() {
+    const head = this.visualHead ?? this.#cursorOffset()
+    this.mode = "normal"
+    this.visualAnchor = null
+    this.visualHead = null
+    this.pendingKey = ""
+    this.countBuffer = ""
+    this.preferredColumn = null
+    this.#setCursor(head)
+  }
+
+  #applyVisualSelection() {
+    const textarea = this.textarea
+    if (!textarea) return
+    const spec = visualRange(
+      textarea.value,
+      this.visualAnchor ?? 0,
+      this.visualHead ?? 0,
+      this.mode === "visual-line"
+    )
+    const backward = (this.visualHead ?? 0) < (this.visualAnchor ?? 0)
+    textarea.setSelectionRange(spec.range[0], spec.range[1], backward ? "backward" : "forward")
+  }
+
+  #deleteVisual() {
+    const textarea = this.textarea
+    if (!textarea) return
+    const linewise = this.mode === "visual-line"
+    const spec = visualRange(textarea.value, this.visualAnchor ?? 0, this.visualHead ?? 0, linewise)
+    const [start, end] = spec.range
+    if (end > start) {
+      this.register = { text: spec.text, linewise }
+      this.#mutateRange([start, end], "")
+    }
+    const updated = this.#editableText()
+    const landing = Math.min(start, updated.length)
+    this.mode = "normal"
+    this.visualAnchor = null
+    this.visualHead = null
+    this.pendingKey = ""
+    this.countBuffer = ""
+    this.preferredColumn = null
+    if (linewise) {
+      const { start: lineStart } = lineBoundsAt(updated, landing)
+      this.#setCursor(lineStart)
+    } else {
+      this.#setCursor(clampToLine(updated, landing))
+    }
+  }
+
+  #moveTo(offset, keepPreferredColumn = false) {
+    if (this.#inVisualMode()) {
+      const length = this.textarea?.value.length ?? 0
+      this.visualHead = Math.max(0, Math.min(offset, length))
+      if (!keepPreferredColumn) this.preferredColumn = null
+      this.#applyVisualSelection()
+      return
+    }
+    this.#setCursor(offset, keepPreferredColumn)
+  }
+
+  #isMotion(key) {
+    return [
+      "h", "l", "j", "k",
+      "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown",
+      "Backspace", " ",
+      "0", "^", "$",
+      "w", "b", "e",
+      "G"
+    ].includes(key)
+  }
+
+  #isCharacterMotion(key) {
+    return ["h", "l", "ArrowLeft", "ArrowRight", "Backspace", " ", "0", "^", "$", "w", "b", "e"].includes(key)
+  }
+
+  #handleVisualKey(key) {
+    if (key === "v") {
+      if (this.mode === "visual") this.#exitVisual()
+      else this.#enterVisual(false)
+      return
+    }
+    if (key === "V") {
+      if (this.mode === "visual-line") this.#exitVisual()
+      else this.#enterVisual(true)
+      return
+    }
+    if (key === "d" || key === "x") {
+      this.countBuffer = ""
+      this.#deleteVisual()
+      return
+    }
+    if (key === "g") {
+      this.pendingKey = "g"
+      return
+    }
+    if (key === "f") {
+      if (this.mode === "visual-line") {
+        this.countBuffer = ""
+        return
+      }
+      this.pendingKey = "f"
+      return
+    }
+    if (this.mode === "visual-line" && this.#isCharacterMotion(key)) {
+      this.countBuffer = ""
+      return
+    }
+    if (this.#isMotion(key)) {
+      this.#performMotion(key)
+      return
+    }
+    this.countBuffer = ""
   }
 
   #pushUndo() {
@@ -440,6 +605,7 @@ export default class extends Controller {
       this.pendingKey = ""
       this.countBuffer = ""
       this.preferredColumn = null
+      if (this.#inVisualMode()) this.#exitVisual()
       this.#syncUI()
       return
     }
@@ -453,15 +619,21 @@ export default class extends Controller {
     }
 
     if (this.pendingKey) {
-      const chord = this.pendingKey + event.key
+      const pending = this.pendingKey
+      const key = event.key
       this.pendingKey = ""
       const count = this.#consumeCount()
-      this.#handleChord(chord, count)
+      if (pending === "f") this.#findChar(key, count)
+      else this.#handleChord(pending + key, count)
       this.#syncUI()
       return
     }
 
-    this.#handleNormalKey(event.key)
+    if (this.#inVisualMode()) {
+      this.#handleVisualKey(event.key)
+    } else {
+      this.#handleNormalKey(event.key)
+    }
     this.#syncUI()
   }
 
@@ -472,7 +644,7 @@ export default class extends Controller {
     switch (chord) {
       case "gg": {
         const targetLine = count ?? 1
-        this.#setCursor(lineStartForNumber(text, targetLine))
+        this.#moveTo(lineStartForNumber(text, targetLine))
         break
       }
       case "dd": {
@@ -512,13 +684,23 @@ export default class extends Controller {
   }
 
   #handleNormalKey(key) {
-    if (key === "d" || key === "y" || key === "g") {
+    if (key === "v" || key === "V") {
+      this.countBuffer = ""
+      this.#enterVisual(key === "V")
+      return
+    }
+
+    if (key === "d" || key === "y" || key === "g" || key === "f") {
       this.pendingKey = key
       return
     }
 
-    const count = this.#consumeCount()
-    const repeat = count ?? 1
+    if (this.#isMotion(key)) {
+      this.#performMotion(key)
+      return
+    }
+
+    this.#consumeCount()
     const text = this.#editableText()
     const pos = this.#cursorOffset()
     const { start, end } = lineBoundsAt(text, pos)
@@ -549,80 +731,6 @@ export default class extends Controller {
       case "O": {
         this.#mutateRange([start, start], "\n")
         this.#enterInsertMode(start)
-        break
-      }
-      case "h":
-      case "ArrowLeft":
-      case "Backspace":
-        this.#setCursor(moveHorizontal(text, pos, -repeat))
-        break
-      case "l":
-      case "ArrowRight":
-      case " ":
-        this.#setCursor(moveHorizontal(text, pos, repeat))
-        break
-      case "0":
-        this.#setCursor(start)
-        break
-      case "^":
-        this.#setCursor(firstNonBlankOnLine(text, pos))
-        break
-      case "$":
-        this.#setCursor(end)
-        break
-      case "j":
-      case "ArrowDown": {
-        let cur = pos
-        let col = this.preferredColumn
-        for (let i = 0; i < repeat; i++) {
-          const next = moveVertical(text, cur, 1, col)
-          cur = next.offset
-          col = next.col
-        }
-        this.preferredColumn = col
-        this.#setCursor(cur, true)
-        break
-      }
-      case "k":
-      case "ArrowUp": {
-        let cur = pos
-        let col = this.preferredColumn
-        for (let i = 0; i < repeat; i++) {
-          const prev = moveVertical(text, cur, -1, col)
-          cur = prev.offset
-          col = prev.col
-        }
-        this.preferredColumn = col
-        this.#setCursor(cur, true)
-        break
-      }
-      case "w": {
-        let cur = pos
-        for (let i = 0; i < repeat; i++) cur = wordForward(text, cur, false)
-        this.#setCursor(cur)
-        break
-      }
-      case "b": {
-        let cur = pos
-        for (let i = 0; i < repeat; i++) cur = wordBackward(text, cur)
-        this.#setCursor(cur)
-        break
-      }
-      case "e": {
-        let cur = pos
-        for (let i = 0; i < repeat; i++) cur = wordEnd(text, cur)
-        this.#setCursor(cur)
-        break
-      }
-      case "G": {
-        if (text.length === 0) {
-          this.#setCursor(0)
-        } else if (count !== null) {
-          this.#setCursor(lineStartForNumber(text, count))
-        } else {
-          const lastBounds = lineBoundsAt(text, text.length)
-          this.#setCursor(lastBounds.start)
-        }
         break
       }
       case "x": {
@@ -672,6 +780,100 @@ export default class extends Controller {
       case "u":
         this.#undo()
         break
+      default:
+        break
+    }
+  }
+
+  #findChar(key, count) {
+    if (key.length !== 1) return
+    const text = this.#editableText()
+    const pos = this.#cursorOffset()
+    this.#moveTo(findCharForward(text, pos, key, count ?? 1))
+  }
+
+  #performMotion(key) {
+    const count = this.#consumeCount()
+    const repeat = count ?? 1
+    const text = this.#editableText()
+    const pos = this.#cursorOffset()
+    const { start, end } = lineBoundsAt(text, pos)
+
+    switch (key) {
+      case "h":
+      case "ArrowLeft":
+      case "Backspace":
+        this.#moveTo(moveHorizontal(text, pos, -repeat))
+        break
+      case "l":
+      case "ArrowRight":
+      case " ":
+        this.#moveTo(moveHorizontal(text, pos, repeat))
+        break
+      case "0":
+        this.#moveTo(start)
+        break
+      case "^":
+        this.#moveTo(firstNonBlankOnLine(text, pos))
+        break
+      case "$":
+        this.#moveTo(end)
+        break
+      case "j":
+      case "ArrowDown": {
+        let cur = pos
+        let col = this.preferredColumn
+        for (let i = 0; i < repeat; i++) {
+          const next = moveVertical(text, cur, 1, col)
+          cur = next.offset
+          col = next.col
+        }
+        this.preferredColumn = col
+        this.#moveTo(cur, true)
+        break
+      }
+      case "k":
+      case "ArrowUp": {
+        let cur = pos
+        let col = this.preferredColumn
+        for (let i = 0; i < repeat; i++) {
+          const prev = moveVertical(text, cur, -1, col)
+          cur = prev.offset
+          col = prev.col
+        }
+        this.preferredColumn = col
+        this.#moveTo(cur, true)
+        break
+      }
+      case "w": {
+        let cur = pos
+        for (let i = 0; i < repeat; i++) cur = wordForward(text, cur, false)
+        this.#moveTo(cur)
+        break
+      }
+      case "b": {
+        let cur = pos
+        for (let i = 0; i < repeat; i++) cur = wordBackward(text, cur)
+        this.#moveTo(cur)
+        break
+      }
+      case "e": {
+        let cur = pos
+        for (let i = 0; i < repeat; i++) cur = wordEnd(text, cur)
+        this.#moveTo(cur)
+        break
+      }
+      case "G": {
+        if (text.length === 0) {
+          this.#moveTo(0)
+        } else if (count !== null) {
+          this.#moveTo(lineStartForNumber(text, count))
+        } else {
+          const lastBounds = lineBoundsAt(text, text.length)
+          this.#moveTo(lastBounds.start)
+        }
+        break
+      }
       default:
         break
     }

@@ -111,6 +111,78 @@ class VimEditorTest < ApplicationSystemTestCase
     assert_equal "Line two\nLine one\nLine three", editor_text
   end
 
+  test "f finds a character and v f selects through it" do
+    sign_in_and_open_note
+    enable_vim_mode
+
+    set_editor_text("hello")
+    press_vim_keys("f")
+    assert_selector "[data-vim-editor-target='badge']", text: "NORMAL (f)"
+    press_vim_keys("l")
+    assert_equal 2, editor_cursor_offset
+
+    press_vim_keys("0", "2", "f", "l")
+    assert_equal 3, editor_cursor_offset
+
+    press_vim_keys("0", "f", "z")
+    assert_equal 0, editor_cursor_offset
+
+    set_editor_text("ab\ncd")
+    press_vim_keys("f", "c")
+    assert_equal 0, editor_cursor_offset
+
+    set_editor_text("hello")
+    press_vim_keys("v", "f")
+    assert_selector "[data-vim-editor-target='badge']", text: "VISUAL (f)"
+    press_vim_keys("l")
+    assert_equal [0, 3], editor_selection
+    press_vim_keys("d")
+    assert_equal "lo", editor_text
+  end
+
+  test "visual selection deletes with d and pastes with p and P" do
+    sign_in_and_open_note
+    enable_vim_mode
+
+    set_editor_text("hello")
+    press_vim_keys("v", "l")
+    assert_equal [0, 2], editor_selection
+    press_vim_keys("d")
+    assert_equal "llo", editor_text
+    press_vim_keys("P")
+    assert_equal "hello", editor_text
+
+    set_editor_text("hello world")
+    press_vim_keys("v", "$", "d")
+    assert_equal "", editor_text
+
+    set_editor_text("alpha beta gamma")
+    press_vim_keys("v", "2", "e")
+    assert_equal [0, 10], editor_selection
+    press_vim_keys("d")
+    assert_equal " gamma", editor_text
+
+    set_editor_text("Line one\nLine two\nLine three")
+    press_vim_keys("V")
+    assert_selector "[data-vim-editor-target='badge']", text: "VISUAL LINE"
+    press_vim_keys("j")
+    assert_equal [0, 18], editor_selection
+    press_vim_keys("d")
+    assert_equal "Line three", editor_text
+    press_vim_keys("p")
+    assert_equal "Line three\nLine one\nLine two", editor_text
+
+    set_editor_text("hello")
+    press_vim_keys("v", "l")
+    assert_selector "[data-vim-editor-target='badge']", text: "VISUAL"
+    assert_no_selector ".vim-block-cursor"
+    press_vim_keys("Escape")
+    assert_equal "hello", editor_text
+    assert_selector "[data-vim-editor-target='badge']", text: "NORMAL"
+    assert_equal [1, 1], editor_selection
+    assert_selector ".vim-block-cursor"
+  end
+
   test "ex-command :w saves the note in Normal mode" do
     sign_in_and_open_note
     enable_vim_mode
@@ -181,6 +253,15 @@ class VimEditorTest < ApplicationSystemTestCase
     def editor_cursor_offset
       page.evaluate_script(<<~JS)
         document.querySelector("[data-vim-editor-target='input']").selectionStart
+      JS
+    end
+
+    def editor_selection
+      page.evaluate_script(<<~JS)
+        (() => {
+          const editor = document.querySelector("[data-vim-editor-target='input']")
+          return [editor.selectionStart, editor.selectionEnd]
+        })()
       JS
     end
 end
