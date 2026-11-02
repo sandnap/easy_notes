@@ -38,6 +38,37 @@ class VimEditorTest < ApplicationSystemTestCase
     # Move back to start of word (b -> 'bta') and delete word (dw)
     press_vim_keys("b", "d", "w")
     assert_equal "alpha gamma", trix_text
+
+    # $ moves to the true end of the line (after the last character)
+    press_vim_keys("$")
+    assert_equal 11, trix_cursor_offset
+
+    # 0 moves to start, and l repeated reaches the true end of the line (11)
+    press_vim_keys("0", *Array.new(11, "l"))
+    assert_equal 11, trix_cursor_offset
+  end
+
+  test "line number jump with <line>G and bare G" do
+    sign_in_and_open_note
+    enable_vim_mode
+
+    set_trix_text("First line\nSecond line\nThird line\nFourth line")
+
+    # 2G jumps to the start of line 2 ("Second line", offset 11)
+    press_vim_keys("2", "G")
+    assert_equal 11, trix_cursor_offset
+
+    # 3G jumps to the start of line 3 ("Third line", offset 23)
+    press_vim_keys("3", "G")
+    assert_equal 23, trix_cursor_offset
+
+    # Bare G jumps to the start of the last line ("Fourth line", offset 34)
+    press_vim_keys("G")
+    assert_equal 34, trix_cursor_offset
+
+    # 1G jumps back to line 1 (offset 0)
+    press_vim_keys("1", "G")
+    assert_equal 0, trix_cursor_offset
   end
 
   test "line deletion (dd), yank/paste (yy, p, P), and undo (u)" do
@@ -125,6 +156,12 @@ class VimEditorTest < ApplicationSystemTestCase
     def trix_text
       page.evaluate_script(<<~JS)
         document.querySelector("trix-editor").editor.getDocument().toString().replace(/\\n$/, "")
+      JS
+    end
+
+    def trix_cursor_offset
+      page.evaluate_script(<<~JS)
+        document.querySelector("trix-editor").editor.getSelectedRange()[0]
       JS
     end
 end

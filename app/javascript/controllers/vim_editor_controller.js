@@ -5,6 +5,7 @@ import {
   moveHorizontal,
   firstNonBlankOnLine,
   moveVertical,
+  lineStartForNumber,
   wordForward,
   wordBackward,
   wordEnd,
@@ -21,6 +22,7 @@ export default class extends Controller {
     this.enabled = !this.isMobile && window.localStorage.getItem(STORAGE_KEY) === "true"
     this.mode = "normal"
     this.pendingKey = ""
+    this.countBuffer = ""
     this.commandBuffer = null
     this.preferredColumn = null
     this.register = { text: "", linewise: false }
@@ -46,6 +48,7 @@ export default class extends Controller {
     window.localStorage.setItem(STORAGE_KEY, this.enabled ? "true" : "false")
     this.mode = "normal"
     this.pendingKey = ""
+    this.countBuffer = ""
     this.commandBuffer = null
     this.preferredColumn = null
     this.#syncUI()
@@ -96,10 +99,11 @@ export default class extends Controller {
         this.badgeTarget.textContent = ""
       } else {
         this.badgeTarget.classList.remove("hidden")
+        const prefix = `${this.countBuffer}${this.pendingKey}`
         if (this.commandBuffer !== null) {
           this.badgeTarget.textContent = `:${this.commandBuffer}`
-        } else if (this.pendingKey) {
-          this.badgeTarget.textContent = `NORMAL (${this.pendingKey})`
+        } else if (prefix) {
+          this.badgeTarget.textContent = `NORMAL (${prefix})`
         } else {
           this.badgeTarget.textContent = this.mode.toUpperCase()
         }
@@ -137,12 +141,20 @@ export default class extends Controller {
     }
   }
 
+  #consumeCount() {
+    if (!this.countBuffer) return null
+    const parsed = parseInt(this.countBuffer, 10)
+    this.countBuffer = ""
+    return Number.isNaN(parsed) || parsed < 1 ? 1 : parsed
+  }
+
   #enterInsertMode(targetOffset = null) {
     if (targetOffset !== null) {
       this.#setCursor(targetOffset)
     }
     this.mode = "insert"
     this.pendingKey = ""
+    this.countBuffer = ""
     this.commandBuffer = null
     this.#syncUI()
   }
@@ -157,6 +169,7 @@ export default class extends Controller {
     }
     this.mode = "normal"
     this.pendingKey = ""
+    this.countBuffer = ""
     this.commandBuffer = null
     this.#syncUI()
   }
@@ -194,7 +207,7 @@ export default class extends Controller {
       return
     }
 
-    // Ex-command buffer (:w)
+    // Ex-command buffer (:w or :<line>)
     if (this.commandBuffer !== null) {
       event.preventDefault()
       event.stopPropagation()
@@ -219,6 +232,9 @@ export default class extends Controller {
         this.#syncUI()
         if (cmd === "w" || cmd === "write") {
           this.#triggerSave()
+        } else if (/^\d+$/.test(cmd)) {
+          const text = this.#editableText()
+          this.#setCursor(lineStartForNumber(text, parseInt(cmd, 10)))
         }
         return
       }
@@ -234,15 +250,26 @@ export default class extends Controller {
 
     if (event.key === "Escape") {
       this.pendingKey = ""
+      this.countBuffer = ""
       this.preferredColumn = null
       this.#syncUI()
       return
     }
 
+    // Numeric count prefix (1-9 to start, 0-9 to continue; bare 0 is line-start motion)
+    if (!this.pendingKey && /^[0-9]$/.test(event.key)) {
+      if (event.key !== "0" || this.countBuffer.length > 0) {
+        this.countBuffer += event.key
+        this.#syncUI()
+        return
+      }
+    }
+
     if (this.pendingKey) {
       const chord = this.pendingKey + event.key
       this.pendingKey = ""
-      this.#handleChord(chord)
+      const count = this.#consumeCount()
+      this.#handleChord(chord, count)
       this.#syncUI()
       return
     }
@@ -251,13 +278,14 @@ export default class extends Controller {
     this.#syncUI()
   }
 
-  #handleChord(chord) {
+  #handleChord(chord, count = null) {
     const text = this.#editableText()
     const pos = this.#cursorOffset()
 
     switch (chord) {
       case "gg": {
-        this.#setCursor(0)
+        const targetLine = count ?? 1
+        this.#setCursor(lineStartForNumber(text, targetLine))
         break
       }
       case "dd": {
@@ -266,7 +294,7 @@ export default class extends Controller {
         this.register = { text: lineText, linewise: true }
         this.#mutateRange(range, "")
         const updated = this.#editableText()
-        const target = Math.min(range[0], Math.max(0, updated.length - 1))
+        const target = Math.min(range[0], Math.max(0, updated.length))
         const { start } = lineBoundsAt(updated, target)
         this.#setCursor(start)
         break
@@ -297,18 +325,19 @@ export default class extends Controller {
   }
 
   #handleNormalKey(key) {
+    // Keep countBuffer across operator/chord prefixes ('d', 'y', 'g')
+    if (key === "d" || key === "y" || key === "g") {
+      this.pendingKey = key
+      return
+    }
+
+    const count = this.#consumeCount()
+    const repeat = count ?? 1
     const text = this.#editableText()
     const pos = this.#cursorOffset()
     const { start, end } = lineBoundsAt(text, pos)
 
     switch (key) {
-      // Pending operators / prefixes
-      case "d":
-      case "y":
-      case "g":
-        this.pendingKey = key
-        break
-
       // Ex-command mode
       case ":":
         this.commandBuffer = ""
@@ -344,12 +373,12 @@ export default class extends Controller {
       case "h":
       case "ArrowLeft":
       case "Backspace":
-        this.#setCursor(moveHorizontal(text, pos, -1))
+        this.#setCursor(moveHorizontal(text, pos, -repeat))
         break
       case "l":
       case "ArrowRight":
       case " ":
-        this.#setCursor(moveHorizontal(text, pos, 1))
+        this.#setCursor(moveHorizontal(text, pos, repeat))
         break
       case "0":
         this.#setCursor(start)
@@ -358,42 +387,65 @@ export default class extends Controller {
         this.#setCursor(firstNonBlankOnLine(text, pos))
         break
       case "$":
-        this.#setCursor(end > start ? end - 1 : start)
+        this.#setCursor(end)
         break
 
       // Vertical motions
       case "j":
       case "ArrowDown": {
-        const next = moveVertical(text, pos, 1, this.preferredColumn)
-        this.preferredColumn = next.col
-        this.#setCursor(next.offset, true)
+        let cur = pos
+        let col = this.preferredColumn
+        for (let i = 0; i < repeat; i++) {
+          const next = moveVertical(text, cur, 1, col)
+          cur = next.offset
+          col = next.col
+        }
+        this.preferredColumn = col
+        this.#setCursor(cur, true)
         break
       }
       case "k":
       case "ArrowUp": {
-        const prev = moveVertical(text, pos, -1, this.preferredColumn)
-        this.preferredColumn = prev.col
-        this.#setCursor(prev.offset, true)
+        let cur = pos
+        let col = this.preferredColumn
+        for (let i = 0; i < repeat; i++) {
+          const prev = moveVertical(text, cur, -1, col)
+          cur = prev.offset
+          col = prev.col
+        }
+        this.preferredColumn = col
+        this.#setCursor(cur, true)
         break
       }
 
       // Word motions
-      case "w":
-        this.#setCursor(wordForward(text, pos, false))
+      case "w": {
+        let cur = pos
+        for (let i = 0; i < repeat; i++) cur = wordForward(text, cur, false)
+        this.#setCursor(cur)
         break
-      case "b":
-        this.#setCursor(wordBackward(text, pos))
+      }
+      case "b": {
+        let cur = pos
+        for (let i = 0; i < repeat; i++) cur = wordBackward(text, cur)
+        this.#setCursor(cur)
         break
-      case "e":
-        this.#setCursor(wordEnd(text, pos))
+      }
+      case "e": {
+        let cur = pos
+        for (let i = 0; i < repeat; i++) cur = wordEnd(text, cur)
+        this.#setCursor(cur)
         break
+      }
 
-      // Document end
+      // Go to line <count>G or last line (G)
       case "G": {
         if (text.length === 0) {
           this.#setCursor(0)
+        } else if (count !== null) {
+          this.#setCursor(lineStartForNumber(text, count))
         } else {
-          const lastBounds = lineBoundsAt(text, text.length - 1)
+          const lastBounds = lineBoundsAt(text, text.length)
           this.#setCursor(lastBounds.start)
         }
         break
@@ -401,8 +453,8 @@ export default class extends Controller {
 
       // Single-key deletions
       case "x": {
-        if (end > start && pos < end) {
-          const delPos = clampToLine(text, pos)
+        if (end > start) {
+          const delPos = pos < end ? pos : end - 1
           this.register = { text: text[delPos] || "", linewise: false }
           this.#mutateRange([delPos, delPos + 1], "")
           const updated = this.#editableText()
@@ -415,7 +467,7 @@ export default class extends Controller {
           this.register = { text: text.slice(pos, end), linewise: false }
           this.#mutateRange([pos, end], "")
           const updated = this.#editableText()
-          this.#setCursor(clampToLine(updated, Math.max(start, pos - 1)))
+          this.#setCursor(clampToLine(updated, pos))
         }
         break
       }

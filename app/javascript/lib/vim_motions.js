@@ -2,14 +2,13 @@
 // Note: Trix's editor.getDocument().toString() appends a trailing "\n" for the
 // final block break; callers should pass the editable body (without Trix's
 // synthetic trailing newline) to these functions.
+// Because Trix renders a collapsed selection [i, i] as a thin caret BEFORE index i,
+// a line's valid caret offsets span [start .. end] inclusive.
 
 export function lineBoundsAt(text, offset) {
   if (text.length === 0) return { start: 0, end: 0 }
   const clamped = Math.max(0, Math.min(offset, text.length))
-  const searchFrom = clamped > 0 && clamped === text.length && text[clamped - 1] !== "\n"
-    ? clamped - 1
-    : clamped
-  const prevNewline = searchFrom === 0 ? -1 : text.lastIndexOf("\n", searchFrom - 1)
+  const prevNewline = clamped === 0 ? -1 : text.lastIndexOf("\n", clamped - 1)
   const start = prevNewline === -1 ? 0 : prevNewline + 1
   const nextNewline = text.indexOf("\n", start)
   const end = nextNewline === -1 ? text.length : nextNewline
@@ -18,14 +17,12 @@ export function lineBoundsAt(text, offset) {
 
 export function clampToLine(text, offset) {
   const { start, end } = lineBoundsAt(text, offset)
-  const maxPos = end > start ? end - 1 : start
-  return Math.max(start, Math.min(offset, maxPos))
+  return Math.max(start, Math.min(offset, end))
 }
 
 export function moveHorizontal(text, offset, delta) {
   const { start, end } = lineBoundsAt(text, offset)
-  const maxPos = end > start ? end - 1 : start
-  return Math.max(start, Math.min(offset + delta, maxPos))
+  return Math.max(start, Math.min(offset + delta, end))
 }
 
 export function firstNonBlankOnLine(text, offset) {
@@ -45,7 +42,7 @@ export function moveVertical(text, offset, direction, preferredColumn = null) {
     const prevEnd = start - 1
     const prevStart = prevEnd === 0 ? 0 : text.lastIndexOf("\n", prevEnd - 1) + 1
     const prevLen = Math.max(0, prevEnd - prevStart)
-    const targetCol = prevLen > 0 ? Math.min(col, prevLen - 1) : 0
+    const targetCol = Math.min(col, prevLen)
     return { offset: prevStart + targetCol, col }
   } else {
     if (end >= text.length) return { offset, col }
@@ -53,9 +50,24 @@ export function moveVertical(text, offset, direction, preferredColumn = null) {
     const nextNewline = text.indexOf("\n", nextStart)
     const nextEnd = nextNewline === -1 ? text.length : nextNewline
     const nextLen = Math.max(0, nextEnd - nextStart)
-    const targetCol = nextLen > 0 ? Math.min(col, nextLen - 1) : 0
+    const targetCol = Math.min(col, nextLen)
     return { offset: nextStart + targetCol, col }
   }
+}
+
+export function lineStartForNumber(text, lineNumber) {
+  if (text.length === 0 || lineNumber <= 1) return 0
+  let currentLine = 1
+  let idx = 0
+  while (currentLine < lineNumber && idx <= text.length) {
+    const nextNewline = text.indexOf("\n", idx)
+    if (nextNewline === -1) {
+      return idx
+    }
+    idx = nextNewline + 1
+    currentLine++
+  }
+  return idx
 }
 
 function charClass(ch) {
