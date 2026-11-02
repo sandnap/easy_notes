@@ -1,4 +1,12 @@
 <div class="flex flex-col">
+  <div class="pbs-3 pbe-2">
+    <input type="search" name="q" placeholder="Search notes…" autocomplete="off"
+           data-controller="notes-search"
+           data-notes-search-url-value="<%= search_path %>"
+           data-action="input->notes-search#search"
+           class="input">
+  </div>
+
   <div data-controller="dialog">
     <div class="flex">
       <button class="btn btn--primary grow mbe-4" 

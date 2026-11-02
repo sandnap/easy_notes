@@ -8,6 +8,8 @@ Rails.application.routes.draw do
   resource :session
   resources :passwords, param: :token
 
+  get "search" => "search#index", as: :search
+
   resources :categories, only: [ :index, :create, :update, :destroy ] do
     resources :notes do
       member do
