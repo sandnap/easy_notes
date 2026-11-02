@@ -83,6 +83,26 @@ trix-editor {
   &:focus-visible {
     outline: 0;
   }
+
+  &[data-vim-mode="normal"] {
+    caret-color: transparent;
+  }
+}
+
+.vim-block-cursor {
+  position: fixed;
+  pointer-events: none;
+  z-index: 30;
+  width: 0.6em;
+  height: 1.35em;
+  background-color: color-mix(in oklch, var(--color-text, currentColor) 45%, transparent);
+  border-radius: 2px;
+  animation: vim-cursor-blink 1.1s steps(1, end) infinite;
+}
+
+@keyframes vim-cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
 }
 
 .trix-content {

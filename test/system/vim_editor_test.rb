@@ -12,17 +12,28 @@ class VimEditorTest < ApplicationSystemTestCase
 
     assert_selector "[data-vim-editor-target='toggleButton']", text: "Vim: Off"
     assert_no_selector "[data-vim-editor-target='badge']", text: "NORMAL"
+    assert_no_selector ".vim-block-cursor"
 
     enable_vim_mode
 
     assert_selector "[data-vim-editor-target='toggleButton']", text: "Vim: On"
     assert_selector "[data-vim-editor-target='badge']", text: "NORMAL"
+    assert_selector ".vim-block-cursor"
+    assert_equal "rgba(0, 0, 0, 0)", page.evaluate_script("getComputedStyle(document.querySelector('trix-editor')).caretColor")
+
+    set_trix_text("hello world")
+    initial_left = page.evaluate_script("document.querySelector('.vim-block-cursor').getBoundingClientRect().left")
+    press_vim_keys("w")
+    moved_left = page.evaluate_script("document.querySelector('.vim-block-cursor').getBoundingClientRect().left")
+    assert_operator moved_left, :>, initial_left
 
     press_vim_keys("i")
     assert_selector "[data-vim-editor-target='badge']", text: "INSERT"
+    assert_no_selector ".vim-block-cursor"
 
     press_vim_keys("Escape")
     assert_selector "[data-vim-editor-target='badge']", text: "NORMAL"
+    assert_selector ".vim-block-cursor"
   end
 
   test "normal mode navigation and character/word deletion (h, l, w, b, 0, $, x, dw)" do
