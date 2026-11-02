@@ -48,6 +48,16 @@ class NotesControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "should get bookmark_note url and scope to current user" do
+    get bookmark_note_url(@note), headers: { "Accept" => "text/html, application/xhtml+xml" }
+    assert_response :success
+    assert_match @note.title, response.body
+
+    other_user_note = notes(:two)
+    get bookmark_note_url(other_user_note), headers: { "Accept" => "text/html, application/xhtml+xml" }
+    assert_response :not_found
+  end
+
   test "should update note with html" do
     patch category_note_url(@category, @note), params: {
       note: {
