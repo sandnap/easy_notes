@@ -10,6 +10,7 @@ export default class extends Controller {
   connect() {
     this.#syncBrowserUrl()
     this.#syncSidebarHighlight()
+    this.#rememberNote()
   }
 
   #syncBrowserUrl() {
@@ -24,6 +25,13 @@ export default class extends Controller {
     }
 
     window.history.pushState({ turbo: true, url: this.urlValue }, "", this.urlValue)
+  }
+
+  #rememberNote() {
+    if (!this.hasNoteIdValue || !this.noteIdValue) return
+
+    const history = this.application.getControllerForElementAndIdentifier(document.body, "history")
+    history?.remember(this.noteIdValue)
   }
 
   #syncSidebarHighlight() {

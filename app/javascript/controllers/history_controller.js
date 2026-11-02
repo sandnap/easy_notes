@@ -1,49 +1,80 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Connects to data-controller="history"
+// Remembers notes opened in this tab. sessionStorage survives the full page
+// loads and Turbo body replacements that happen while moving between notes.
+const HISTORY_LIMIT = 5
+const STORAGE_KEY = "easy_notes.note_history"
+
+function readStore() {
+  try {
+    const parsed = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "")
+    if (parsed && Array.isArray(parsed.history) && Number.isInteger(parsed.index)) return parsed
+  } catch {
+    // A missing or unreadable value starts a new history.
+  }
+
+  return { history: [], index: -1 }
+}
+
+function writeStore(store) {
+  sessionStorage.setItem(STORAGE_KEY, JSON.stringify(store))
+}
+
 export default class extends Controller {
   connect() {
-    this.history = []
-    this.viewingNoteId = null
-  }
-
-  add(event) {
-    const noteId = event.target.dataset.noteId
-    if (!this.navigating && this.viewingNoteId !== noteId) {
-      // Only keep 5 iterms in history
-      this.history = this.history.slice(-4)
-      this.history.push(noteId)
-      this.viewingNoteId = noteId
-    }
     this.navigating = false
+    this.#syncButtons()
   }
 
-  back() {
-    const idx = this.history.lastIndexOf(this.viewingNoteId)
-    const noteId = this.history[idx - 1]
-    this.navigating = true
-    if (noteId) {
-      this.viewingNoteId = noteId
-      const note = document.querySelector(`a[data-note-id='${noteId}']`)
-      note.click()
-      this.highlight(noteId)
+  add() {
+    if (!this.navigating) return
+
+    this.navigating = false
+    this.#syncButtons()
+  }
+
+  remember(noteId) {
+    noteId = noteId?.toString()
+    if (!noteId) return
+
+    if (this.navigating) {
+      this.navigating = false
+      this.#syncButtons()
+      return
     }
-  }
 
-  forward() {
-    const idx = this.history.lastIndexOf(this.viewingNoteId)
-    const noteId = this.history[idx + 1]
-    this.navigating = true
-    if (noteId) {
-      this.viewingNoteId = noteId
-      const note = document.querySelector(`a[data-note-id='${noteId}']`)
-      this.highlight(noteId)
-      note.click()
+    const store = readStore()
+    if (store.history[store.index] === noteId) {
+      this.#syncButtons()
+      return
     }
+
+    store.history = store.history.slice(0, store.index + 1)
+    store.history.push(noteId)
+    if (store.history.length > HISTORY_LIMIT) store.history = store.history.slice(-HISTORY_LIMIT)
+    store.index = store.history.length - 1
+    writeStore(store)
+    this.#syncButtons()
   }
 
-  hasHistory() {
-    return this.history.length > 0
+  back(event) {
+    event?.preventDefault()
+    const store = readStore()
+    if (store.index <= 0) return
+
+    store.index -= 1
+    writeStore(store)
+    this.#open(store.history[store.index])
+  }
+
+  forward(event) {
+    event?.preventDefault()
+    const store = readStore()
+    if (store.index < 0 || store.index >= store.history.length - 1) return
+
+    store.index += 1
+    writeStore(store)
+    this.#open(store.history[store.index])
   }
 
   highlight(noteId) {
@@ -52,6 +83,28 @@ export default class extends Controller {
     })
     this.element.querySelectorAll(`div[data-note-id="${noteId}"]`).forEach((element) => {
       element.classList.add("bg-shade")
+    })
+  }
+
+  #open(noteId) {
+    const note = document.querySelector(`#sidebar a[data-note-id='${noteId}']`)
+      || document.querySelector(`a[data-note-id='${noteId}']`)
+
+    if (!note) return
+
+    this.navigating = true
+    note.click()
+    this.highlight(noteId)
+    this.#syncButtons()
+  }
+
+  #syncButtons() {
+    const store = readStore()
+    document.querySelectorAll("[data-action='click->history#back']").forEach((button) => {
+      button.disabled = store.index <= 0
+    })
+    document.querySelectorAll("[data-action='click->history#forward']").forEach((button) => {
+      button.disabled = store.index < 0 || store.index >= store.history.length - 1
     })
   }
 }
