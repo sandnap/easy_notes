@@ -50,6 +50,13 @@
   --btn-border-color: transparent;
 }
 
+.btn--toggle[aria-pressed="true"] {
+  --btn-background: var(--color-primary);
+  --btn-border-color: transparent;
+  --btn-color: var(--color-text-reversed);
+  --btn-icon-color: var(--color-filter-text-reversed);
+}
+
 .btn--borderless {
   --btn-border-color: transparent;
 }

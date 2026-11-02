@@ -1,4 +1,4 @@
-# Search a user's notes (across all categories) by title or rich-text body.
+# Search a user's notes (across all categories) by title or markdown body.
 class NoteSearchQuery
   def initialize(user:, query:)
     @user = user
@@ -12,8 +12,7 @@ class NoteSearchQuery
 
     Note.joins(:category)
         .where(categories: { user_id: @user.id })
-        .left_joins(:rich_text_content)
-        .where("notes.title LIKE ? ESCAPE '\\' OR action_text_rich_texts.body LIKE ? ESCAPE '\\'", pattern, pattern)
+        .where("notes.title LIKE ? ESCAPE '\\' OR notes.content LIKE ? ESCAPE '\\'", pattern, pattern)
         .includes(:category)
         .order(updated_at: :desc)
         .limit(50)

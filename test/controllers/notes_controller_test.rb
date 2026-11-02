@@ -43,6 +43,29 @@ class NotesControllerTest < ActionDispatch::IntegrationTest
     assert_match /turbo-stream/, @response.media_type
   end
 
+  test "renders a sanitized markdown preview" do
+    post preview_note_url, params: { content: "**bold** and ~~gone~~" }
+
+    assert_response :success
+    assert_match %r{<strong>bold</strong>}, response.body
+    assert_match %r{<del>gone</del>}, response.body
+  end
+
+  test "preview strips unsafe html" do
+    post preview_note_url, params: { content: "<script>alert(1)</script>\n\n[click](javascript:alert(1))" }
+
+    assert_response :success
+    assert_no_match(/<script/i, response.body)
+    assert_no_match(/javascript:/i, response.body)
+  end
+
+  test "preview requires authentication" do
+    delete session_url
+    post preview_note_url, params: { content: "**bold**" }
+
+    assert_redirected_to new_session_path
+  end
+
   test "should get edit" do
     get edit_category_note_url(@category, @note), headers: { "Accept" => "text/html, application/xhtml+xml" }
     assert_response :success

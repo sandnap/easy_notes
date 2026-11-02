@@ -13,9 +13,33 @@ import {
 } from "lib/vim_motions"
 
 const STORAGE_KEY = "easy_notes.vim_mode"
+const MIRROR_PROPERTIES = [
+  "boxSizing",
+  "borderTopWidth",
+  "borderRightWidth",
+  "borderBottomWidth",
+  "borderLeftWidth",
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
+  "fontStyle",
+  "fontVariant",
+  "fontWeight",
+  "fontStretch",
+  "fontSize",
+  "lineHeight",
+  "fontFamily",
+  "textAlign",
+  "textTransform",
+  "textIndent",
+  "letterSpacing",
+  "wordSpacing",
+  "tabSize"
+]
 
 export default class extends Controller {
-  static targets = ["badge", "toggleButton", "submit"]
+  static targets = ["badge", "toggleButton", "submit", "input"]
 
   connect() {
     this.isMobile = this.#detectMobile()
@@ -27,40 +51,40 @@ export default class extends Controller {
     this.commandBuffer = null
     this.preferredColumn = null
     this.register = { text: "", linewise: false }
+    this.undoStack = []
+    this.redoStack = []
+    this.insertSnapshot = null
 
     this.boundKeydown = this.#onKeydown.bind(this)
-    this.boundTrixInit = this.#onTrixInitialize.bind(this)
     this.boundCursorUpdate = this.#updateBlockCursor.bind(this)
 
-    this.element.addEventListener("trix-initialize", this.boundTrixInit)
-    this.element.addEventListener("trix-selection-change", this.boundCursorUpdate)
-    this.element.addEventListener("trix-change", this.boundCursorUpdate)
     this.element.addEventListener("focusin", this.boundCursorUpdate)
     this.element.addEventListener("focusout", this.boundCursorUpdate)
     this.element.addEventListener("click", this.boundCursorUpdate)
+    this.textarea?.addEventListener("scroll", this.boundCursorUpdate)
+    this.textarea?.addEventListener("input", this.boundCursorUpdate)
     window.addEventListener("keydown", this.boundKeydown, true)
     window.addEventListener("resize", this.boundCursorUpdate)
     window.addEventListener("scroll", this.boundCursorUpdate, true)
 
     this.#ensureBlockCursorElement()
     this.#syncUI()
-    if (this.editor) {
-      this.#activateEditorOnLoad()
-    }
+    if (this.textarea) this.#activateEditorOnLoad()
   }
 
   disconnect() {
-    this.element.removeEventListener("trix-initialize", this.boundTrixInit)
-    this.element.removeEventListener("trix-selection-change", this.boundCursorUpdate)
-    this.element.removeEventListener("trix-change", this.boundCursorUpdate)
     this.element.removeEventListener("focusin", this.boundCursorUpdate)
     this.element.removeEventListener("focusout", this.boundCursorUpdate)
     this.element.removeEventListener("click", this.boundCursorUpdate)
+    this.textarea?.removeEventListener("scroll", this.boundCursorUpdate)
+    this.textarea?.removeEventListener("input", this.boundCursorUpdate)
     window.removeEventListener("keydown", this.boundKeydown, true)
     window.removeEventListener("resize", this.boundCursorUpdate)
     window.removeEventListener("scroll", this.boundCursorUpdate, true)
     this.blockCursorEl?.remove()
     this.blockCursorEl = null
+    this.mirrorEl?.remove()
+    this.mirrorEl = null
   }
 
   toggle() {
@@ -74,15 +98,11 @@ export default class extends Controller {
     this.commandBuffer = null
     this.preferredColumn = null
     this.#syncUI()
-    this.trixElement?.focus()
+    this.textarea?.focus()
   }
 
-  get trixElement() {
-    return this.element.querySelector("trix-editor")
-  }
-
-  get editor() {
-    return this.trixElement?.editor
+  get textarea() {
+    return this.hasInputTarget ? this.inputTarget : null
   }
 
   #detectMobile() {
@@ -91,38 +111,31 @@ export default class extends Controller {
     return Boolean(coarse || narrow)
   }
 
-  #onTrixInitialize() {
-    if (this.enabled) {
-      this.mode = "normal"
-    }
-    this.#activateEditorOnLoad()
-    this.#syncUI()
+  #suspended() {
+    return this.element.hasAttribute("data-vim-suspended")
   }
 
   #activateEditorOnLoad() {
-    if (!this.enabled || this.isMobile) return
-    const trix = this.trixElement
-    if (!trix || !this.editor) return
+    if (!this.enabled || this.isMobile || this.#suspended()) return
+    const textarea = this.textarea
+    if (!textarea) return
 
     const active = document.activeElement
-    const isTypingInOtherInput = active && active !== trix && !trix.contains(active) &&
+    const isTypingInOtherInput = active && active !== textarea &&
       (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)
 
     if (!isTypingInOtherInput) {
-      trix.focus()
-      const range = this.editor.getSelectedRange()
-      if (!range) {
-        this.editor.setSelectedRange([0, 0])
-      }
+      textarea.focus()
+      if (textarea.selectionStart == null) textarea.setSelectionRange(0, 0)
     }
   }
 
   #syncUI() {
-    const trix = this.trixElement
+    const textarea = this.textarea
     if (this.isMobile) {
       if (this.hasToggleButtonTarget) this.toggleButtonTarget.classList.add("hidden")
       if (this.hasBadgeTarget) this.badgeTarget.classList.add("hidden")
-      trix?.setAttribute("data-vim-mode", "off")
+      textarea?.setAttribute("data-vim-mode", "off")
       return
     }
 
@@ -151,8 +164,8 @@ export default class extends Controller {
       }
     }
 
-    if (trix) {
-      trix.setAttribute("data-vim-mode", this.enabled ? this.mode : "off")
+    if (textarea) {
+      textarea.setAttribute("data-vim-mode", this.enabled ? this.mode : "off")
     }
     this.#updateBlockCursor()
   }
@@ -162,16 +175,59 @@ export default class extends Controller {
     const el = document.createElement("div")
     el.className = "vim-block-cursor hidden"
     el.style.display = "none"
-    el.setAttribute("data-vim-editor-target", "blockCursor")
     el.setAttribute("aria-hidden", "true")
     this.element.appendChild(el)
     this.blockCursorEl = el
   }
 
+  #mirrorElement() {
+    if (this.mirrorEl) return this.mirrorEl
+    const el = document.createElement("div")
+    el.setAttribute("aria-hidden", "true")
+    document.body.appendChild(el)
+    this.mirrorEl = el
+    return el
+  }
+
+  #caretRect() {
+    const textarea = this.textarea
+    const style = window.getComputedStyle(textarea)
+    const mirror = this.#mirrorElement()
+    MIRROR_PROPERTIES.forEach((prop) => {
+      mirror.style[prop] = style[prop]
+    })
+    mirror.style.position = "absolute"
+    mirror.style.visibility = "hidden"
+    mirror.style.whiteSpace = "pre-wrap"
+    mirror.style.wordWrap = "break-word"
+    mirror.style.overflow = "hidden"
+    mirror.style.height = "auto"
+    mirror.style.top = "0"
+    mirror.style.left = "0"
+    mirror.style.width = `${textarea.offsetWidth}px`
+
+    const pos = this.#cursorOffset()
+    mirror.replaceChildren(document.createTextNode(textarea.value.slice(0, pos)))
+    const marker = document.createElement("span")
+    marker.textContent = "\u200b"
+    mirror.appendChild(marker)
+
+    const textareaRect = textarea.getBoundingClientRect()
+    const mirrorRect = mirror.getBoundingClientRect()
+    const markerRect = marker.getBoundingClientRect()
+    const lineHeight = parseFloat(style.lineHeight) || 22
+    return {
+      left: textareaRect.left + (markerRect.left - mirrorRect.left) - textarea.scrollLeft,
+      top: textareaRect.top + (markerRect.top - mirrorRect.top) - textarea.scrollTop,
+      height: markerRect.height || lineHeight
+    }
+  }
+
   #updateBlockCursor() {
     this.#ensureBlockCursorElement()
-    const trix = this.trixElement
-    if (!this.blockCursorEl || !trix || !this.editor || !this.enabled || this.isMobile || this.mode !== "normal") {
+    const textarea = this.textarea
+    const hide = !this.blockCursorEl || !textarea || !this.enabled || this.isMobile || this.mode !== "normal" || this.#suspended()
+    if (hide) {
       if (this.blockCursorEl) {
         this.blockCursorEl.classList.add("hidden")
         this.blockCursorEl.style.display = "none"
@@ -179,27 +235,27 @@ export default class extends Controller {
       return
     }
 
-    const pos = this.#cursorOffset()
-    let rect = this.editor.getClientRectAtPosition(pos)
-    if (!rect && pos > 0) {
-      rect = this.editor.getClientRectAtPosition(pos - 1)
+    let rect
+    try {
+      rect = this.#caretRect()
+    } catch {
+      rect = null
     }
 
-    if (!rect || (rect.width === 0 && rect.height === 0 && rect.top === 0 && rect.left === 0)) {
-      const trixRect = trix.getBoundingClientRect()
-      const style = window.getComputedStyle(trix)
+    if (!rect || (rect.height === 0 && rect.top === 0 && rect.left === 0)) {
+      const textareaRect = textarea.getBoundingClientRect()
+      const style = window.getComputedStyle(textarea)
       const padLeft = parseFloat(style.paddingLeft) || 0
       const padTop = parseFloat(style.paddingTop) || 0
       const lineHeight = parseFloat(style.lineHeight) || 22
       rect = {
-        left: trixRect.left + padLeft,
-        top: trixRect.top + padTop,
-        width: 9,
+        left: textareaRect.left + padLeft,
+        top: textareaRect.top + padTop,
         height: lineHeight
       }
     }
 
-    const computedFont = parseFloat(window.getComputedStyle(trix).fontSize) || 16
+    const computedFont = parseFloat(window.getComputedStyle(textarea).fontSize) || 16
     const width = Math.max(8, Math.round(computedFont * 0.58))
     const height = Math.max(16, Math.round(rect.height || computedFont * 1.35))
 
@@ -212,29 +268,51 @@ export default class extends Controller {
   }
 
   #editableText() {
-    const raw = this.editor?.getDocument()?.toString() ?? ""
-    return raw.endsWith("\n") ? raw.slice(0, -1) : raw
+    return this.textarea?.value ?? ""
   }
 
   #cursorOffset() {
-    const range = this.editor?.getSelectedRange()
-    return range ? range[0] : 0
+    return this.textarea?.selectionStart ?? 0
+  }
+
+  #pushUndo() {
+    this.undoStack.push({ value: this.textarea.value, cursor: this.#cursorOffset() })
+    if (this.undoStack.length > 200) this.undoStack.shift()
+    this.redoStack = []
+  }
+
+  #restore(state) {
+    this.textarea.value = state.value
+    this.#setCursor(state.cursor, true)
+  }
+
+  #undo() {
+    if (!this.undoStack.length || !this.textarea) return
+    this.redoStack.push({ value: this.textarea.value, cursor: this.#cursorOffset() })
+    this.#restore(this.undoStack.pop())
+  }
+
+  #redo() {
+    if (!this.redoStack.length || !this.textarea) return
+    this.undoStack.push({ value: this.textarea.value, cursor: this.#cursorOffset() })
+    this.#restore(this.redoStack.pop())
   }
 
   #mutateRange(range, replacement = "") {
-    this.editor.recordUndoEntry("Vim edit")
-    this.editor.setSelectedRange(range)
-    this.editor.insertString(replacement)
+    const textarea = this.textarea
+    if (!textarea) return
+    const value = textarea.value
+    this.#pushUndo()
+    const [start, end] = range
+    textarea.value = value.slice(0, start) + replacement + value.slice(end)
   }
 
   #setCursor(offset, keepPreferredColumn = false) {
-    const text = this.#editableText()
-    const maxOffset = Math.max(0, text.length)
-    const clamped = Math.max(0, Math.min(offset, maxOffset))
-    this.editor?.setSelectedRange([clamped, clamped])
-    if (!keepPreferredColumn) {
-      this.preferredColumn = null
-    }
+    const textarea = this.textarea
+    if (!textarea) return
+    const clamped = Math.max(0, Math.min(offset, textarea.value.length))
+    textarea.setSelectionRange(clamped, clamped)
+    if (!keepPreferredColumn) this.preferredColumn = null
   }
 
   #consumeCount() {
@@ -245,9 +323,8 @@ export default class extends Controller {
   }
 
   #enterInsertMode(targetOffset = null) {
-    if (targetOffset !== null) {
-      this.#setCursor(targetOffset)
-    }
+    if (targetOffset !== null) this.#setCursor(targetOffset)
+    this.insertSnapshot = { value: this.textarea.value, cursor: this.#cursorOffset() }
     this.mode = "insert"
     this.pendingKey = ""
     this.countBuffer = ""
@@ -256,7 +333,13 @@ export default class extends Controller {
   }
 
   #enterNormalMode(stepBack = false) {
-    if (stepBack && this.editor) {
+    if (this.insertSnapshot && this.textarea && this.insertSnapshot.value !== this.textarea.value) {
+      this.undoStack.push(this.insertSnapshot)
+      this.redoStack = []
+    }
+    this.insertSnapshot = null
+
+    if (stepBack && this.textarea) {
       const text = this.#editableText()
       const pos = this.#cursorOffset()
       const { start } = lineBoundsAt(text, pos)
@@ -271,14 +354,13 @@ export default class extends Controller {
   }
 
   #onKeydown(event) {
-    if (!this.enabled || this.isMobile) return
-    const trix = this.trixElement
-    if (!trix || !this.editor) return
+    if (!this.enabled || this.isMobile || this.#suspended()) return
+    const textarea = this.textarea
+    if (!textarea) return
 
     const target = event.target
-    const insideTrix = target === trix || trix.contains(target)
-    if (!insideTrix) {
-      // Allow typing in the Note title input, sidebar search input, or dialogs undisturbed
+    const insideEditor = target === textarea
+    if (!insideEditor) {
       if (
         target &&
         (target.tagName === "INPUT" ||
@@ -289,10 +371,8 @@ export default class extends Controller {
       ) {
         return
       }
-      // If we are in Normal mode and focus is on document.body / a non-input element,
-      // focus trix-editor and handle the Normal-mode key immediately.
       if (this.mode !== "normal") return
-      trix.focus()
+      textarea.focus()
     }
 
     if (this.mode === "insert") {
@@ -304,25 +384,19 @@ export default class extends Controller {
       return
     }
 
-    // Normal mode handling
     if (event.metaKey || event.altKey) return
 
-    // Handle Ctrl+r (redo) in Normal mode; allow Ctrl+s to pass through
     if (event.ctrlKey) {
       if (event.key === "r") {
         event.preventDefault()
         event.stopPropagation()
-        this.editor.redo()
+        this.#redo()
       }
       return
     }
 
-    // Ignore lone modifier keys
-    if (["Shift", "Control", "Alt", "Meta", "CapsLock"].includes(event.key)) {
-      return
-    }
+    if (["Shift", "Control", "Alt", "Meta", "CapsLock"].includes(event.key)) return
 
-    // Ex-command buffer (:w or :<line>)
     if (this.commandBuffer !== null) {
       event.preventDefault()
       event.stopPropagation()
@@ -371,7 +445,6 @@ export default class extends Controller {
       return
     }
 
-    // Numeric count prefix (1-9 to start, 0-9 to continue; bare 0 is line-start motion)
     if (!this.pendingKey && /^[0-9]$/.test(event.key)) {
       if (event.key !== "0" || this.countBuffer.length > 0) {
         this.countBuffer += event.key
@@ -440,7 +513,6 @@ export default class extends Controller {
   }
 
   #handleNormalKey(key) {
-    // Keep countBuffer across operator/chord prefixes ('d', 'y', 'g')
     if (key === "d" || key === "y" || key === "g") {
       this.pendingKey = key
       return
@@ -453,12 +525,9 @@ export default class extends Controller {
     const { start, end } = lineBoundsAt(text, pos)
 
     switch (key) {
-      // Ex-command mode
       case ":":
         this.commandBuffer = ""
         break
-
-      // Mode transitions to Insert
       case "i":
         this.#enterInsertMode(clampToLine(text, pos))
         break
@@ -483,8 +552,6 @@ export default class extends Controller {
         this.#enterInsertMode(start)
         break
       }
-
-      // Horizontal motions
       case "h":
       case "ArrowLeft":
       case "Backspace":
@@ -504,8 +571,6 @@ export default class extends Controller {
       case "$":
         this.#setCursor(end)
         break
-
-      // Vertical motions
       case "j":
       case "ArrowDown": {
         let cur = pos
@@ -532,8 +597,6 @@ export default class extends Controller {
         this.#setCursor(cur, true)
         break
       }
-
-      // Word motions
       case "w": {
         let cur = pos
         for (let i = 0; i < repeat; i++) cur = wordForward(text, cur, false)
@@ -552,8 +615,6 @@ export default class extends Controller {
         this.#setCursor(cur)
         break
       }
-
-      // Go to line <count>G or last line (G)
       case "G": {
         if (text.length === 0) {
           this.#setCursor(0)
@@ -565,8 +626,6 @@ export default class extends Controller {
         }
         break
       }
-
-      // Single-key deletions
       case "x": {
         if (end > start) {
           const delPos = pos < end ? pos : end - 1
@@ -586,8 +645,6 @@ export default class extends Controller {
         }
         break
       }
-
-      // Paste
       case "p": {
         if (!this.register.text && !this.register.linewise) break
         if (this.register.linewise) {
@@ -613,12 +670,9 @@ export default class extends Controller {
         }
         break
       }
-
-      // Undo
       case "u":
-        this.editor.undo()
+        this.#undo()
         break
-
       default:
         break
     }

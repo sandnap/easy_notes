@@ -1,5 +1,6 @@
-<div class="pbs-4 pbe-0 pis-4 pie-4"
-     data-controller="keyboard vim-editor url-sync"
+<div class="note-screen pbs-4 pbe-0 pis-4 pie-4"
+     data-controller="keyboard vim-editor url-sync markdown-preview"
+     data-markdown-preview-url-value="<%= preview_note_path %>"
      data-url-sync-url-value="<%= @note.persisted? ? bookmark_note_path(@note) : '' %>"
      data-url-sync-note-id-value="<%= @note.id %>"
      data-url-sync-category-id-value="<%= @category.id %>">
@@ -9,17 +10,32 @@
       <div class="flex items-center gap-half">
         <span data-vim-editor-target="badge" class="badge text-xs hidden">NORMAL</span>
         <button type="button"
+                data-markdown-preview-target="editButton"
+                data-action="click->markdown-preview#showEdit"
+                class="btn btn--secondary btn--toggle text-xs"
+                aria-pressed="true">
+          Edit
+        </button>
+        <button type="button"
+                data-markdown-preview-target="previewButton"
+                data-action="click->markdown-preview#showPreview"
+                class="btn btn--secondary btn--toggle text-xs"
+                aria-pressed="false">
+          Preview
+        </button>
+        <button type="button"
                 data-vim-editor-target="toggleButton"
                 data-action="click->vim-editor#toggle"
-                class="btn btn--secondary text-xs">
+                class="btn btn--secondary btn--toggle text-xs"
+                aria-pressed="false">
           Vim: Off
         </button>
       </div>
     </div>
 
-    <%= form_with(model: [@category, @note], 
+    <%= form_with(model: [@category, @note],
                 class: "flex flex-col gap-4",
-                data: { 
+                data: {
                   controller: "form",
                   turbo: true,
                   turbo_frame: "_top"
@@ -38,8 +54,12 @@
         <%= f.text_field :title, class: "input", required: true %>
       </div>
 
-      <div data-turbo-permanent>
-        <%= f.rich_text_area :content, placeholder: "Write away..." %>
+      <div class="note-editor-pane" data-turbo-permanent>
+        <%= f.text_area :content,
+              placeholder: "Write away...",
+              class: "note-editor",
+              data: { vim_editor_target: "input", markdown_preview_target: "editor" } %>
+        <div data-markdown-preview-target="preview" class="markdown-body" hidden></div>
       </div>
       <div style="bottom: -24px; width: <%= @note.new_record? ? '180px;' : '350px;' %> align-self: flex-end;" class="flex justify-end gap sticky bg-main pb-4 pi-4 border border-dark">
         <% unless @note.new_record? %>

@@ -60,25 +60,43 @@ trix-toolbar {
   }
 }
 
-trix-editor {
+#main > turbo-frame {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-block-size: 0;
+}
+
+.note-screen {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-block-size: 0;
+}
+
+.note-screen > .card,
+.note-screen form,
+.note-editor-pane {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-block-size: 0;
+}
+
+textarea.note-editor {
   border: 0;
-  min-block-size: var(--size-72);
+  box-sizing: border-box;
+  background: transparent;
+  color: inherit;
+  flex: 1 1 auto;
+  font: inherit;
+  inline-size: 100%;
+  line-height: var(--leading-7);
+  min-block-size: 0;
+  overflow: auto;
   padding-block: var(--size-6) var(--size-2);
-
-  &:empty:not(:focus)::before {
-    color: color-mix(in oklch, currentColor 50%, transparent);
-  }
-
-  [data-trix-mutable].attachment img,
-  [data-trix-mutable].attachment--content,
-  [data-trix-mutable].attachment--file {
-    box-shadow: 0 0 0 2px var(--color-selected-dark);
-  }
-
-  .attachment__metadata {
-    background-color: var(--color-border-light);
-    color: var(--color-text);
-  }
+  resize: none;
+  white-space: pre-wrap;
 
   &:focus-visible {
     outline: 0;

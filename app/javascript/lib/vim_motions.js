@@ -1,9 +1,6 @@
 // Pure string/offset calculations for Vim motions on plain-text buffers.
-// Note: Trix's editor.getDocument().toString() appends a trailing "\n" for the
-// final block break; callers should pass the editable body (without Trix's
-// synthetic trailing newline) to these functions.
-// Because Trix renders a collapsed selection [i, i] as a thin caret BEFORE index i,
-// a line's valid caret offsets span [start .. end] inclusive.
+// Callers pass the textarea value. A line's valid caret offsets span
+// [start .. end] inclusive, where end is the offset after the last character.
 
 export function lineBoundsAt(text, offset) {
   if (text.length === 0) return { start: 0, end: 0 }

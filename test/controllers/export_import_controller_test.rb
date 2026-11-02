@@ -28,6 +28,9 @@ class ExportImportControllerTest < ActionDispatch::IntegrationTest
     category_data = yaml_data.find { |c| c["name"] == @category.name }
     assert_not_nil category_data
     assert_equal @category.notes.count, category_data["notes"].length
+
+    note_data = category_data["notes"].find { |note| note["title"] == @note.title }
+    assert_equal @note.content, note_data["content"]
   end
 
   test "should handle import with valid YAML" do
@@ -58,11 +61,11 @@ class ExportImportControllerTest < ActionDispatch::IntegrationTest
     assert_not_nil new_category
     assert_equal 1, new_category.notes.count
     assert_equal "Imported Note", new_category.notes.first.title
-    assert_includes new_category.notes.first.content.body.to_s, "Imported content"
+    assert_equal "Imported content", new_category.notes.first.content
   end
 
   test "should not override existing notes during import" do
-    original_content = @note.content.body.to_s
+    original_content = @note.content
 
     # Prepare test data with existing category and note names
     import_data = [ {
@@ -87,7 +90,7 @@ class ExportImportControllerTest < ActionDispatch::IntegrationTest
 
     # Verify original note content was not changed
     @note.reload
-    assert_equal original_content, @note.content.body.to_s
+    assert_equal original_content, @note.content
   end
 
   test "should handle import with missing file" do
@@ -129,6 +132,26 @@ class ExportImportControllerTest < ActionDispatch::IntegrationTest
 
     new_note = @category.notes.find_by(title: "New Note in Existing Category")
     assert_not_nil new_note
-    assert_includes new_note.content.body.to_s, "New note content"
+    assert_equal "New note content", new_note.content
+  end
+
+  test "imports a markdown string and converts legacy action text html" do
+    import_data = [ {
+      "name" => "Markdown Category",
+      "notes" => [
+        { "title" => "Plain markdown", "content" => "Hello **world**" },
+        { "title" => "Legacy html", "content" => { "body" => "<div>Hello <strong>there</strong></div>" } }
+      ]
+    } ].to_yaml
+
+    file = Tempfile.new([ "test_import", ".yml" ])
+    file.write(import_data)
+    file.rewind
+
+    post export_import_import_url, params: { file: fixture_file_upload(file.path, "application/x-yaml") }
+
+    category = @user.categories.find_by(name: "Markdown Category")
+    assert_equal "Hello **world**", category.notes.find_by(title: "Plain markdown").content
+    assert_equal "Hello **there**", category.notes.find_by(title: "Legacy html").content
   end
 end

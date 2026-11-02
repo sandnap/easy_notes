@@ -30,7 +30,7 @@ class ExportImportController < ApplicationController
 
                   # don't override existing notes
                   if note.new_record?
-                    note.content = note_data["content"]["body"]
+                    note.content = imported_content(note_data["content"])
                     note.save!
                   end
                 end
@@ -52,5 +52,18 @@ class ExportImportController < ApplicationController
 
   def get_categories
     @categories = Current.user.categories.includes(:notes).order("notes.position ASC")
+  end
+
+  # New exports store markdown as a string. Older files nest Action Text HTML
+  # as content: { body: "..." }.
+  def imported_content(content)
+    case content
+    when String
+      content
+    when Hash
+      ActionTextToMarkdown.convert(content["body"].to_s)
+    else
+      ""
+    end
   end
 end

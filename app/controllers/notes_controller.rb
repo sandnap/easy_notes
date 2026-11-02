@@ -1,5 +1,5 @@
 class NotesController < ApplicationController
-  before_action :set_category, except: [ :show ]
+  before_action :set_category, except: [ :show, :preview ]
   before_action :set_note_from_user, only: [ :show ]
   before_action :set_categories, only: [ :new, :create, :show, :edit, :update ]
   before_action :set_note, only: [ :edit, :update, :sort ]
@@ -100,6 +100,10 @@ class NotesController < ApplicationController
     else
       head :unprocessable_entity
     end
+  end
+
+  def preview
+    render html: MarkdownRenderer.render(params[:content]), layout: false
   end
 
   def destroy

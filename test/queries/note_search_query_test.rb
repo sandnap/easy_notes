@@ -13,7 +13,7 @@ class NoteSearchQueryTest < ActiveSupport::TestCase
     assert_includes results, note
   end
 
-  test "matches rich text content body" do
+  test "matches note content" do
     note = create_note(user: @user, title: "Shopping", body: "Remember the avocados")
 
     results = NoteSearchQuery.new(user: @user, query: "avocado").results

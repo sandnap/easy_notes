@@ -6,8 +6,6 @@ class Note < ApplicationRecord
   validates :position, presence: true
   validates :category, presence: true
 
-  has_rich_text :content
-
   before_validation :set_default_position, on: :create
 
   private
