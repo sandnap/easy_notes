@@ -1,0 +1,70 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Unified linting script for the Tally application
+# Usage: bin/lint [options]
+#
+# Options:
+#   -a, --auto     Auto-fix issues where possible
+#   -q, --quick    Run only Rubocop (fastest)
+#   -f, --full     Run Rubocop + RubyCritic
+#   -s, --security Run security checks (Brakeman + bundler-audit)
+#   -h, --help     Show this help
+
+require "optparse"
+
+options = {
+  auto: false,
+  quick: false,
+  full: false,
+  security: false
+}
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: bin/lint [options]"
+
+  opts.on("-a", "--auto", "Auto-fix issues where possible") { options[:auto] = true }
+  opts.on("-q", "--quick", "Run only Rubocop (fastest)") { options[:quick] = true }
+  opts.on("-f", "--full", "Run Rubocop + RubyCritic") { options[:full] = true }
+  opts.on("-s", "--security", "Run security checks") { options[:security] = true }
+  opts.on("-h", "--help", "Show this help") do
+    puts opts
+    exit
+  end
+end.parse!
+
+def run(name, command)
+  puts "\n\e[1;34m▶ #{name}\e[0m"
+  puts "-" * 60
+  system(command) || exit(1)
+end
+
+def section(title)
+  puts "\n\e[1;32m═══ #{title} ═══\e[0m"
+end
+
+# Always run Rubocop
+section "Code Style (Rubocop)"
+if options[:auto]
+  run "Rubocop (auto-fix)", "bundle exec rubocop -A"
+else
+  run "Rubocop", "bundle exec rubocop"
+end
+
+# Quick mode stops here
+exit(0) if options[:quick]
+
+# Security checks
+if options[:security]
+  section "Security"
+  run "Brakeman", "bundle exec brakeman -q --no-pager"
+  run "Bundle Audit", "bundle exec bundler-audit check --update"
+end
+
+# Full analysis
+if options[:full]
+  section "Code Quality (RubyCritic)"
+  run "RubyCritic", "bundle exec rubycritic app/ --no-browser -f console | tail -20"
+end
+
+puts "\n\e[1;32m✓ All checks passed!\e[0m\n"

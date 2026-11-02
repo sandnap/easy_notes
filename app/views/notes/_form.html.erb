@@ -1,8 +1,20 @@
 <div class="pbs-4 pbe-0 pis-4 pie-4"
-     data-controller="keyboard">
+     data-controller="keyboard vim-editor url-sync"
+     data-url-sync-url-value="<%= @note.persisted? ? bookmark_note_path(@note) : '' %>"
+     data-url-sync-note-id-value="<%= @note.id %>"
+     data-url-sync-category-id-value="<%= @category.id %>">
   <div class="card">
     <div class="flex items-center justify-between gap-4 mbe-4">
       <h1 class="text-2xl font-bold"><%= @note.new_record? ? "New Note in #{@category.name}" : @note.title %></h1>
+      <div class="flex items-center gap-half">
+        <span data-vim-editor-target="badge" class="badge text-xs hidden">NORMAL</span>
+        <button type="button"
+                data-vim-editor-target="toggleButton"
+                data-action="click->vim-editor#toggle"
+                class="btn btn--secondary text-xs">
+          Vim: Off
+        </button>
+      </div>
     </div>
 
     <%= form_with(model: [@category, @note], 
@@ -43,7 +55,7 @@
             class: "btn btn--negative" %>
         <% end %>
         <%= link_to @note.new_record? ? "Cancel" : "Close", root_path, data: { turbo_stream: "true", turbo_prefetch: false }, class: "btn" %>
-        <%= f.submit "Save", data: { turbo_frame: "_top", keyboard_target: "submit" }, class: "btn btn--primary" %>
+        <%= f.submit "Save", data: { turbo_frame: "_top", keyboard_target: "submit", vim_editor_target: "submit" }, class: "btn btn--primary" %>
       </div>
     <% end %>
   </div>

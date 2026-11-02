@@ -46,9 +46,17 @@ group :development, :test do
 
   # Static analysis for security vulnerabilities [https://brakemanscanner.org/]
   gem "brakeman", require: false
+  gem "bundler-audit", require: false
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # Performance-focused linting [https://github.com/rubocop/rubocop-performance]
+  gem "rubocop-performance", require: false
+
+  # Code quality analysis [https://github.com/faisal/rubycritic]
+  # NOTE: Hopefully a bug will be fixed and we can just use rubycritic main
+  gem "rubycritic", github: "faisal/rubycritic", branch: "fix_flog"
 end
 
 group :development do
@@ -62,4 +70,8 @@ group :test do
   gem "selenium-webdriver"
 end
 
-gem "css-zero", "~> 1.0.6"
+# Pin to 0.0.89: views + vendored component CSS are written against this
+# version's utility classes. The 1.0.x bump renamed utilities (gap-4 -> gap-half,
+# dropped .hidden/.sticky/.flex-grow/.hide@md) and broke styling. Migrate views
+# first before bumping. See git commit 52a6127.
+gem "css-zero", "~> 0.0.89"

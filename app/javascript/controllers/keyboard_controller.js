@@ -4,11 +4,12 @@ export default class extends Controller {
   static targets = ["submit"]
 
   connect() {
-    document.addEventListener("keydown", this.handleKeydown.bind(this))
+    this.boundHandleKeydown = this.handleKeydown.bind(this)
+    document.addEventListener("keydown", this.boundHandleKeydown)
   }
 
   disconnect() {
-    document.removeEventListener("keydown", this.handleKeydown.bind(this))
+    document.removeEventListener("keydown", this.boundHandleKeydown)
   }
 
   handleKeydown(event) {
