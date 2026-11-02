@@ -19,7 +19,8 @@ export default class extends Controller {
 
   connect() {
     this.isMobile = this.#detectMobile()
-    this.enabled = !this.isMobile && window.localStorage.getItem(STORAGE_KEY) === "true"
+    const savedPref = window.localStorage.getItem(STORAGE_KEY)
+    this.enabled = !this.isMobile && (savedPref === null ? true : savedPref === "true")
     this.mode = "normal"
     this.pendingKey = ""
     this.countBuffer = ""
@@ -29,16 +30,37 @@ export default class extends Controller {
 
     this.boundKeydown = this.#onKeydown.bind(this)
     this.boundTrixInit = this.#onTrixInitialize.bind(this)
+    this.boundCursorUpdate = this.#updateBlockCursor.bind(this)
 
     this.element.addEventListener("trix-initialize", this.boundTrixInit)
-    this.element.addEventListener("keydown", this.boundKeydown, true)
+    this.element.addEventListener("trix-selection-change", this.boundCursorUpdate)
+    this.element.addEventListener("trix-change", this.boundCursorUpdate)
+    this.element.addEventListener("focusin", this.boundCursorUpdate)
+    this.element.addEventListener("focusout", this.boundCursorUpdate)
+    this.element.addEventListener("click", this.boundCursorUpdate)
+    window.addEventListener("keydown", this.boundKeydown, true)
+    window.addEventListener("resize", this.boundCursorUpdate)
+    window.addEventListener("scroll", this.boundCursorUpdate, true)
 
+    this.#ensureBlockCursorElement()
     this.#syncUI()
+    if (this.editor) {
+      this.#activateEditorOnLoad()
+    }
   }
 
   disconnect() {
     this.element.removeEventListener("trix-initialize", this.boundTrixInit)
-    this.element.removeEventListener("keydown", this.boundKeydown, true)
+    this.element.removeEventListener("trix-selection-change", this.boundCursorUpdate)
+    this.element.removeEventListener("trix-change", this.boundCursorUpdate)
+    this.element.removeEventListener("focusin", this.boundCursorUpdate)
+    this.element.removeEventListener("focusout", this.boundCursorUpdate)
+    this.element.removeEventListener("click", this.boundCursorUpdate)
+    window.removeEventListener("keydown", this.boundKeydown, true)
+    window.removeEventListener("resize", this.boundCursorUpdate)
+    window.removeEventListener("scroll", this.boundCursorUpdate, true)
+    this.blockCursorEl?.remove()
+    this.blockCursorEl = null
   }
 
   toggle() {
@@ -73,7 +95,26 @@ export default class extends Controller {
     if (this.enabled) {
       this.mode = "normal"
     }
+    this.#activateEditorOnLoad()
     this.#syncUI()
+  }
+
+  #activateEditorOnLoad() {
+    if (!this.enabled || this.isMobile) return
+    const trix = this.trixElement
+    if (!trix || !this.editor) return
+
+    const active = document.activeElement
+    const isTypingInOtherInput = active && active !== trix && !trix.contains(active) &&
+      (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable)
+
+    if (!isTypingInOtherInput) {
+      trix.focus()
+      const range = this.editor.getSelectedRange()
+      if (!range) {
+        this.editor.setSelectedRange([0, 0])
+      }
+    }
   }
 
   #syncUI() {
@@ -113,6 +154,61 @@ export default class extends Controller {
     if (trix) {
       trix.setAttribute("data-vim-mode", this.enabled ? this.mode : "off")
     }
+    this.#updateBlockCursor()
+  }
+
+  #ensureBlockCursorElement() {
+    if (this.blockCursorEl) return
+    const el = document.createElement("div")
+    el.className = "vim-block-cursor hidden"
+    el.style.display = "none"
+    el.setAttribute("data-vim-editor-target", "blockCursor")
+    el.setAttribute("aria-hidden", "true")
+    this.element.appendChild(el)
+    this.blockCursorEl = el
+  }
+
+  #updateBlockCursor() {
+    this.#ensureBlockCursorElement()
+    const trix = this.trixElement
+    if (!this.blockCursorEl || !trix || !this.editor || !this.enabled || this.isMobile || this.mode !== "normal") {
+      if (this.blockCursorEl) {
+        this.blockCursorEl.classList.add("hidden")
+        this.blockCursorEl.style.display = "none"
+      }
+      return
+    }
+
+    const pos = this.#cursorOffset()
+    let rect = this.editor.getClientRectAtPosition(pos)
+    if (!rect && pos > 0) {
+      rect = this.editor.getClientRectAtPosition(pos - 1)
+    }
+
+    if (!rect || (rect.width === 0 && rect.height === 0 && rect.top === 0 && rect.left === 0)) {
+      const trixRect = trix.getBoundingClientRect()
+      const style = window.getComputedStyle(trix)
+      const padLeft = parseFloat(style.paddingLeft) || 0
+      const padTop = parseFloat(style.paddingTop) || 0
+      const lineHeight = parseFloat(style.lineHeight) || 22
+      rect = {
+        left: trixRect.left + padLeft,
+        top: trixRect.top + padTop,
+        width: 9,
+        height: lineHeight
+      }
+    }
+
+    const computedFont = parseFloat(window.getComputedStyle(trix).fontSize) || 16
+    const width = Math.max(8, Math.round(computedFont * 0.58))
+    const height = Math.max(16, Math.round(rect.height || computedFont * 1.35))
+
+    this.blockCursorEl.style.left = `${Math.round(rect.left)}px`
+    this.blockCursorEl.style.top = `${Math.round(rect.top)}px`
+    this.blockCursorEl.style.width = `${width}px`
+    this.blockCursorEl.style.height = `${height}px`
+    this.blockCursorEl.classList.remove("hidden")
+    this.blockCursorEl.style.display = "block"
   }
 
   #editableText() {
@@ -178,7 +274,26 @@ export default class extends Controller {
     if (!this.enabled || this.isMobile) return
     const trix = this.trixElement
     if (!trix || !this.editor) return
-    if (event.target !== trix && !trix.contains(event.target)) return
+
+    const target = event.target
+    const insideTrix = target === trix || trix.contains(target)
+    if (!insideTrix) {
+      // Allow typing in the Note title input, sidebar search input, or dialogs undisturbed
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable ||
+          target.closest("dialog[open]"))
+      ) {
+        return
+      }
+      // If we are in Normal mode and focus is on document.body / a non-input element,
+      // focus trix-editor and handle the Normal-mode key immediately.
+      if (this.mode !== "normal") return
+      trix.focus()
+    }
 
     if (this.mode === "insert") {
       if (event.key === "Escape") {

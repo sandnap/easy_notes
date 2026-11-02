@@ -7,22 +7,38 @@ class VimEditorTest < ApplicationSystemTestCase
     @note = notes(:one)
   end
 
-  test "toggling Vim mode starts in NORMAL mode and switches between NORMAL and INSERT" do
+  test "Vim mode starts enabled in NORMAL mode on initial load and can be toggled off and on" do
     sign_in_and_open_note
-
-    assert_selector "[data-vim-editor-target='toggleButton']", text: "Vim: Off"
-    assert_no_selector "[data-vim-editor-target='badge']", text: "NORMAL"
-
-    enable_vim_mode
 
     assert_selector "[data-vim-editor-target='toggleButton']", text: "Vim: On"
     assert_selector "[data-vim-editor-target='badge']", text: "NORMAL"
+    assert_selector ".vim-block-cursor"
+    assert_equal "rgba(0, 0, 0, 0)", page.evaluate_script("getComputedStyle(document.querySelector('trix-editor')).caretColor")
+
+    # Even if trix-editor is blurred (focus on document.body), pressing Normal-mode keys works immediately
+    set_trix_text("hello world")
+    page.execute_script("document.activeElement?.blur()")
+    initial_left = page.evaluate_script("document.querySelector('.vim-block-cursor').getBoundingClientRect().left")
+    page.execute_script(<<~JS)
+      document.body.dispatchEvent(new KeyboardEvent("keydown", { key: "w", bubbles: true, cancelable: true }))
+    JS
+    assert_equal 6, trix_cursor_offset
+    moved_left = page.evaluate_script("document.querySelector('.vim-block-cursor').getBoundingClientRect().left")
+    assert_operator moved_left, :>, initial_left
 
     press_vim_keys("i")
     assert_selector "[data-vim-editor-target='badge']", text: "INSERT"
+    assert_no_selector ".vim-block-cursor"
 
     press_vim_keys("Escape")
     assert_selector "[data-vim-editor-target='badge']", text: "NORMAL"
+    assert_selector ".vim-block-cursor"
+
+    # Clicking toggle turns Vim mode off
+    page.execute_script("document.querySelector(\"[data-vim-editor-target='toggleButton']\").click()")
+    assert_selector "[data-vim-editor-target='toggleButton']", text: "Vim: Off"
+    assert_no_selector "[data-vim-editor-target='badge']", text: "NORMAL"
+    assert_no_selector ".vim-block-cursor"
   end
 
   test "normal mode navigation and character/word deletion (h, l, w, b, 0, $, x, dw)" do
@@ -139,7 +155,10 @@ class VimEditorTest < ApplicationSystemTestCase
     end
 
     def enable_vim_mode
-      page.execute_script("document.querySelector(\"[data-vim-editor-target='toggleButton']\").click()")
+      page.execute_script(<<~JS)
+        const btn = document.querySelector("[data-vim-editor-target='toggleButton']")
+        if (btn && btn.textContent.trim() === "Vim: Off") btn.click()
+      JS
       assert_selector "[data-vim-editor-target='badge']", text: "NORMAL"
     end
 
