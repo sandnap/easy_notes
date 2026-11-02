@@ -6,7 +6,7 @@
   <% else %>
     <% notes.each do |note| %>
       <div class="note flex items-center gap border p-3" data-note-id="<%= note.id %>">
-        <%= link_to note.title, edit_category_note_path(note.category, note), class: "grow", data: { note_id: note.id, turbo_stream: "true", turbo_prefetch: "false" } %>
+        <%= link_to note.title, edit_category_note_path(note.category, note), class: "grow", data: { note_id: note.id, action: "click->category-highlight#highlight click->history#add", turbo_stream: "true", turbo_prefetch: "false" } %>
         <span class="badge text-subtle"><%= note.category.name %></span>
       </div>
     <% end %>

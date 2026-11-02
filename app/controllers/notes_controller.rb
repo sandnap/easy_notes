@@ -1,7 +1,20 @@
 class NotesController < ApplicationController
-  before_action :set_category
-  before_action :set_categories, only: [ :new, :create, :edit, :update ]
+  before_action :set_category, except: [ :show ]
+  before_action :set_note_from_user, only: [ :show ]
+  before_action :set_categories, only: [ :new, :create, :show, :edit, :update ]
   before_action :set_note, only: [ :edit, :update, :sort ]
+
+  def show
+    @the_note = @note
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: [
+          turbo_stream.update("main_frame", partial: "form", locals: { note: @note })
+        ]
+      end
+      format.html { render :edit }
+    end
+  end
 
   def new
     @note = @category.notes.build
@@ -20,6 +33,7 @@ class NotesController < ApplicationController
 
     if @note.save
       @note = @category.notes.find(@note.id) # Reload to ensure associations
+      @the_note = @note
       respond_to do |format|
         flash[:notice] = "Note was successfully created."
         format.turbo_stream do
@@ -121,6 +135,11 @@ class NotesController < ApplicationController
   private
     def set_category
       @category = Current.user.categories.find(params[:category_id])
+    end
+
+    def set_note_from_user
+      @note = Note.joins(:category).where(categories: { user_id: Current.user.id }).find(params[:id])
+      @category = @note.category
     end
 
     def set_categories

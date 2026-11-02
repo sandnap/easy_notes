@@ -9,6 +9,7 @@ Rails.application.routes.draw do
   resources :passwords, param: :token
 
   get "search" => "search#index", as: :search
+  get "notes/:id" => "notes#show", as: :bookmark_note
 
   resources :categories, only: [ :index, :create, :update, :destroy ] do
     resources :notes do
