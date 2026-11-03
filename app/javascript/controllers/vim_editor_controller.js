@@ -140,13 +140,14 @@ export default class extends Controller {
   #syncUI() {
     const textarea = this.textarea
     if (this.isMobile) {
-      if (this.hasToggleButtonTarget) this.toggleButtonTarget.classList.add("hidden")
+      if (this.hasToggleButtonTarget) this.toggleButtonTarget.hidden = true
       if (this.hasBadgeTarget) this.badgeTarget.hidden = true
       textarea?.setAttribute("data-vim-mode", "off")
       return
     }
 
     if (this.hasToggleButtonTarget) {
+      this.toggleButtonTarget.hidden = false
       this.toggleButtonTarget.classList.remove("hidden")
       this.toggleButtonTarget.textContent = this.enabled ? "Vim: On" : "Vim: Off"
       this.toggleButtonTarget.setAttribute("aria-pressed", this.enabled ? "true" : "false")

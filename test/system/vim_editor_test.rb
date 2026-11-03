@@ -42,6 +42,27 @@ class VimEditorTest < ApplicationSystemTestCase
     assert_no_selector ".vim-block-cursor"
   end
 
+  test "a phone hides the Vim toggle and places Edit and Preview under the title" do
+    sign_in_and_open_note
+    window = page.driver.browser.manage.window
+    original = window.size
+
+    assert_selector "[data-vim-editor-target='toggleButton']", visible: :visible
+    assert_selector "a", text: "Easy Notes"
+    assert heading_layout["sideBySide"]
+
+    window.resize_to(390, 844)
+    begin
+      layout = heading_layout
+      assert_selector "[data-vim-editor-target='toggleButton']", visible: :hidden
+      assert_selector "a", text: "Easy Notes", visible: :hidden
+      assert layout["editBelowTitle"], "Edit stayed beside the title: #{layout}"
+      assert layout["vimHidden"]
+    ensure
+      window.resize_to(original.width, original.height)
+    end
+  end
+
   test "normal mode navigation and character/word deletion (h, l, w, b, 0, $, x, dw)" do
     sign_in_and_open_note
     enable_vim_mode
@@ -284,6 +305,21 @@ class VimEditorTest < ApplicationSystemTestCase
     def editor_cursor_offset
       page.evaluate_script(<<~JS)
         document.querySelector("[data-vim-editor-target='input']").selectionStart
+      JS
+    end
+
+    def heading_layout
+      page.evaluate_script(<<~JS)
+        (() => {
+          const title = document.querySelector(".note-heading h1").getBoundingClientRect()
+          const edit = document.querySelector("[data-markdown-preview-target='editButton']").getBoundingClientRect()
+          const vim = document.querySelector("[data-vim-editor-target='toggleButton']")
+          return {
+            sideBySide: Math.abs(edit.top - title.top) < 12,
+            editBelowTitle: edit.top >= title.bottom - 1,
+            vimHidden: getComputedStyle(vim).display === "none"
+          }
+        })()
       JS
     end
 

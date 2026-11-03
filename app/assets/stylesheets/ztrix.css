@@ -74,6 +74,31 @@ trix-toolbar {
   min-block-size: 0;
 }
 
+.note-heading {
+  align-items: center;
+  column-gap: var(--size-4);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-block-end: var(--size-4);
+  row-gap: var(--size-2);
+}
+
+.note-heading h1 {
+  min-inline-size: 0;
+}
+
+@media (width < 48rem) {
+  .note-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .note-heading [data-vim-editor-target="toggleButton"] {
+    display: none;
+  }
+}
+
 .note-screen > .card,
 .note-screen form,
 .note-editor-pane {
