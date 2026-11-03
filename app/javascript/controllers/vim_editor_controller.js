@@ -195,8 +195,9 @@ export default class extends Controller {
     return el
   }
 
-  #caretRect() {
+  #caretMetrics() {
     const textarea = this.textarea
+    if (!textarea) return null
     const style = window.getComputedStyle(textarea)
     const mirror = this.#mirrorElement()
     MIRROR_PROPERTIES.forEach((prop) => {
@@ -222,11 +223,65 @@ export default class extends Controller {
     const mirrorRect = mirror.getBoundingClientRect()
     const markerRect = marker.getBoundingClientRect()
     const lineHeight = parseFloat(style.lineHeight) || 22
+    const contentTop = markerRect.top - mirrorRect.top
+    const contentLeft = markerRect.left - mirrorRect.left
+    const height = markerRect.height || lineHeight
     return {
-      left: textareaRect.left + (markerRect.left - mirrorRect.left) - textarea.scrollLeft,
-      top: textareaRect.top + (markerRect.top - mirrorRect.top) - textarea.scrollTop,
-      height: markerRect.height || lineHeight
+      contentTop,
+      contentLeft,
+      height,
+      left: textareaRect.left + contentLeft - textarea.scrollLeft,
+      top: textareaRect.top + contentTop - textarea.scrollTop
     }
+  }
+
+  // j/k move a collapsed caret. The browser then tries to reveal it by
+  // scrolling #main, which slides the whole note, while the fixed cursor
+  // keeps walking past the textarea. Scroll the note itself and put the
+  // page back where it was.
+  #scrollCaretIntoView() {
+    const textarea = this.textarea
+    const caret = this.#caretMetrics()
+    if (!textarea || !caret) return
+
+    const bottom = caret.contentTop + caret.height
+    if (caret.contentTop < textarea.scrollTop) {
+      textarea.scrollTop = caret.contentTop
+    } else if (bottom > textarea.scrollTop + textarea.clientHeight) {
+      textarea.scrollTop = bottom - textarea.clientHeight
+    }
+
+    const right = caret.contentLeft + 1
+    if (caret.contentLeft < textarea.scrollLeft) {
+      textarea.scrollLeft = caret.contentLeft
+    } else if (right > textarea.scrollLeft + textarea.clientWidth) {
+      textarea.scrollLeft = right - textarea.clientWidth
+    }
+  }
+
+  #withOuterScrollLocked(callback) {
+    const main = document.getElementById("main")
+    const mainTop = main?.scrollTop ?? 0
+    const mainLeft = main?.scrollLeft ?? 0
+    const x = window.scrollX
+    const y = window.scrollY
+    callback()
+    const restore = () => this.#restoreOuterScroll(main, mainTop, mainLeft, x, y)
+    restore()
+    requestAnimationFrame(restore)
+  }
+
+  #restoreOuterScroll(main, mainTop, mainLeft, x, y) {
+    if (main) {
+      if (main.scrollTop !== mainTop) main.scrollTop = mainTop
+      if (main.scrollLeft !== mainLeft) main.scrollLeft = mainLeft
+    }
+    if (window.scrollX === x && window.scrollY === y) return
+    const root = document.documentElement
+    const previous = root.style.scrollBehavior
+    root.style.scrollBehavior = "auto"
+    window.scrollTo(x, y)
+    root.style.scrollBehavior = previous
   }
 
   #updateBlockCursor() {
@@ -243,7 +298,7 @@ export default class extends Controller {
 
     let rect
     try {
-      rect = this.#caretRect()
+      rect = this.#caretMetrics()
     } catch {
       rect = null
     }
@@ -262,13 +317,31 @@ export default class extends Controller {
     }
 
     const computedFont = parseFloat(window.getComputedStyle(textarea).fontSize) || 16
-    const width = Math.max(8, Math.round(computedFont * 0.58))
-    const height = Math.max(16, Math.round(rect.height || computedFont * 1.35))
+    let width = Math.max(8, Math.round(computedFont * 0.58))
+    let height = Math.max(16, Math.round(rect.height || computedFont * 1.35))
+    const box = textarea.getBoundingClientRect()
+    let left = rect.left
+    let top = rect.top
+    if (top < box.top) {
+      height -= box.top - top
+      top = box.top
+    }
+    if (top + height > box.bottom) height = box.bottom - top
+    if (left < box.left) {
+      width -= box.left - left
+      left = box.left
+    }
+    if (left + width > box.right) width = box.right - left
+    if (width < 2 || height < 2) {
+      this.blockCursorEl.classList.add("hidden")
+      this.blockCursorEl.style.display = "none"
+      return
+    }
 
-    this.blockCursorEl.style.left = `${Math.round(rect.left)}px`
-    this.blockCursorEl.style.top = `${Math.round(rect.top)}px`
-    this.blockCursorEl.style.width = `${width}px`
-    this.blockCursorEl.style.height = `${height}px`
+    this.blockCursorEl.style.left = `${Math.round(left)}px`
+    this.blockCursorEl.style.top = `${Math.round(top)}px`
+    this.blockCursorEl.style.width = `${Math.round(width)}px`
+    this.blockCursorEl.style.height = `${Math.round(height)}px`
     this.blockCursorEl.classList.remove("hidden")
     this.blockCursorEl.style.display = "block"
   }
@@ -345,7 +418,10 @@ export default class extends Controller {
       this.mode === "visual-line"
     )
     const backward = (this.visualHead ?? 0) < (this.visualAnchor ?? 0)
-    textarea.setSelectionRange(spec.range[0], spec.range[1], backward ? "backward" : "forward")
+    this.#withOuterScrollLocked(() => {
+      textarea.setSelectionRange(spec.range[0], spec.range[1], backward ? "backward" : "forward")
+      this.#scrollCaretIntoView()
+    })
   }
 
   #deleteVisual() {
@@ -475,7 +551,10 @@ export default class extends Controller {
     const textarea = this.textarea
     if (!textarea) return
     const clamped = Math.max(0, Math.min(offset, textarea.value.length))
-    textarea.setSelectionRange(clamped, clamped)
+    this.#withOuterScrollLocked(() => {
+      textarea.setSelectionRange(clamped, clamped)
+      this.#scrollCaretIntoView()
+    })
     if (!keepPreferredColumn) this.preferredColumn = null
   }
 

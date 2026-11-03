@@ -111,6 +111,37 @@ class VimEditorTest < ApplicationSystemTestCase
     assert_equal "Line two\nLine one\nLine three", editor_text
   end
 
+  test "vertical motions scroll the note and keep the cursor inside it" do
+    sign_in_and_open_note
+    enable_vim_mode
+
+    set_editor_text((1..120).map { |number| "Line #{number}" }.join("\n"))
+    page.execute_script(<<~JS)
+      const editor = document.querySelector("[data-vim-editor-target='input']")
+      const main = document.querySelector("#main")
+      editor.scrollTop = 0
+      editor.setSelectionRange(0, 0)
+      main.scrollTop = 0
+    JS
+
+    before = editor_scroll_metrics
+    press_vim_keys(*Array.new(100, "j"))
+    below = editor_scroll_metrics
+
+    assert below["inside"], "cursor left the editor while moving down: #{below}"
+    assert_operator below["editorScroll"], :>, before["editorScroll"]
+    assert_equal before["mainScroll"], below["mainScroll"]
+    assert_equal before["windowScroll"], below["windowScroll"]
+
+    press_vim_keys(*Array.new(100, "k"))
+    above = editor_scroll_metrics
+
+    assert above["inside"], "cursor left the editor while moving up: #{above}"
+    assert_operator above["editorScroll"], :<, below["editorScroll"]
+    assert_equal before["mainScroll"], above["mainScroll"]
+    assert_equal before["windowScroll"], above["windowScroll"]
+  end
+
   test "f finds a character and v f selects through it" do
     sign_in_and_open_note
     enable_vim_mode
@@ -253,6 +284,29 @@ class VimEditorTest < ApplicationSystemTestCase
     def editor_cursor_offset
       page.evaluate_script(<<~JS)
         document.querySelector("[data-vim-editor-target='input']").selectionStart
+      JS
+    end
+
+    def editor_scroll_metrics
+      page.evaluate_async_script(<<~JS)
+        const done = arguments[0]
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          const editor = document.querySelector("[data-vim-editor-target='input']")
+          const cursor = document.querySelector(".vim-block-cursor")
+          const editorBox = editor.getBoundingClientRect()
+          const cursorBox = cursor.getBoundingClientRect()
+          const inside = getComputedStyle(cursor).display !== "none" &&
+            cursorBox.top >= editorBox.top - 1 &&
+            cursorBox.bottom <= editorBox.bottom + 1 &&
+            cursorBox.left >= editorBox.left - 1 &&
+            cursorBox.right <= editorBox.right + 1
+          done({
+            inside,
+            editorScroll: editor.scrollTop,
+            mainScroll: document.querySelector("#main").scrollTop,
+            windowScroll: window.scrollY
+          })
+        }))
       JS
     end
 
