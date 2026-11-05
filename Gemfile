@@ -77,4 +77,4 @@ end
 # version's utility classes. The 1.0.x bump renamed utilities (gap-4 -> gap-half,
 # dropped .hidden/.sticky/.flex-grow/.hide@md) and broke styling. Migrate views
 # first before bumping. See git commit 52a6127.
-gem "css-zero", "~> 0.0.89"
+gem "css-zero", "~> 4.3.0"
